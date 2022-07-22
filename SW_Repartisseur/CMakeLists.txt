@@ -1,33 +1,26 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(sendosc)
+project(versionOne)
 set (CMAKE_CXX_STANDARD 11)
 
-if(WIN32)
-  include_directories( c:\\local\\oscpack_1_1_0\\include )
+
+include_directories(/usr/include)
+include_directories(/usr/include/c++/9)
+include_directories(/usr/include/c++/9/backward)
+include_directories(/usr/include/oscpack)
+include_directories(/usr/include/x86_64-linux-gnu)
+include_directories(/usr/include/x86_64-linux-gnu/c++/9)
+include_directories(/usr/lib/gcc/x86_64-linux-gnu/9/include)
+include_directories(/usr/local/include)
+include_directories(/usr/local/include/oscpack)
+
+link_directories(/usr/local/lib)
   
-  if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-    link_directories( c:\\local\\oscpack_1_1_0\\lib\\Debug )
-  else()
-    link_directories( c:\\local\\oscpack_1_1_0\\lib\\Release )
-  endif()
-  set(LIBS ${LIBS} ws2_32 winmm)
+set(CMAKE_CXX_FLAGS "-g -Wall")
+set(CMAKE_C_FLAGS "-g -Wall")
 
-elseif(APPLE)
-  include_directories(/usr/local/include/oscpack /opt/homebrew/include/oscpack)
-  link_directories(/usr/local/lib /opt/homebrew/lib)
-  set(CMAKE_CXX_FLAGS "-g -Wall")
-  set(CMAKE_C_FLAGS "-g -Wall")
-else()
-  include_directories(/usr/include/oscpack)
-  include_directories(/usr/local/include/oscpack)
-  link_directories(/usr/local/lib)
-  set(CMAKE_CXX_FLAGS "-g -Wall")
-  set(CMAKE_C_FLAGS "-g -Wall")
-endif()
+add_executable(versionOne main.cpp sendosc.cpp slmx4_vcom.cpp)
+target_link_libraries(versionOne oscpack ${LIBS})
 
-add_executable(sendosc OSC_Cmake.cpp)
-target_link_libraries(sendosc oscpack ${LIBS})
-
-INSTALL(TARGETS sendosc RUNTIME DESTINATION bin)
+INSTALL(TARGETS versionOne RUNTIME DESTINATION bin)
 

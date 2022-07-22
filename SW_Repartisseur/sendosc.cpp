@@ -1,9 +1,12 @@
 #include <iostream>
 
-#include "osc/OscOutboundPacketStream.h"
-#include "ip/UdpSocket.h"
+#include </usr/include/oscpack/osc/OscOutboundPacketStream.h>
+#include </usr/include/oscpack/ip/UdpSocket.h>
+
+#include "sendosc.h"
 
 #include <unistd.h>
+#include <sys/socket.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -19,7 +22,7 @@ char* host_addr = "10.0.2.2";
 /*------------------------------------------------------------------------------------*/
 
 
-int main()
+int sendosc()
 {
 	using namespace osc;
 
@@ -36,7 +39,7 @@ int main()
 		// setup packet
 		char buf[BUF_SIZE];
 		memset(buf, 0, BUF_SIZE);
-		OutboundPacketStream p(buf, BUF_SIZE);
+		osc::OutboundPacketStream p(buf, BUF_SIZE);
 
 		char *path = "int";
 		p << osc::BeginMessage(path);
@@ -48,5 +51,5 @@ int main()
 
 	//bundle?
 
-	//return 0;
+	return 0;
 }
