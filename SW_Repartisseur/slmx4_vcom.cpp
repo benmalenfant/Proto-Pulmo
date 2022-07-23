@@ -2,52 +2,15 @@
 
 #include "slmx4_vcom.h"
 
-#include <iostream>
-#include <errno.h> // Error integer and strerror() function
-#include <fcntl.h> // Contains file controls like O_RDWR
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <termios.h> // Contains POSIX terminal control definitions
-#include <unistd.h> // write(), read(), close()
+
 
 
 #define BUFF_SIZE 32
 
 #define UPDATE_NUM_SAMPLERS 0
 
+#define DEBUG
 
-
-
-
-
-
-
-class slmx4
-{
-	slmx4();
-
-	void Begin();
-	void init_device();
-	void init_serial();
-	void termios_config();
-	void updateNumberOfSamplers();
-
-	void OpenRadar();
-	void CloseRadar();
-	void getData(void*, int);
-	void* Item(int CMD);
-	int device_id;
-	struct termios tty;
-
-	int status;
-	int numSamplers;
-	int isOpen;
-
-private:
-	enum type{INT, CHAR, STRING};
-
-};
 
 
 slmx4::slmx4()
@@ -61,7 +24,9 @@ slmx4::slmx4()
 void slmx4::Begin()
 {
 	init_serial();
+
 	init_device();
+
 	OpenRadar();
 	//cout << "bins = " << numSamplers << endl;
 }
@@ -168,7 +133,7 @@ void slmx4::updateNumberOfSamplers()
 
 void slmx4::init_serial()
 {
-	device_id = open("/dev/ttyUSB0", O_RDWR);
+	device_id = open("/dev/ttyACM0", O_RDWR);
 
 	// Check for errors
 	if (device_id < 0) {
@@ -181,6 +146,7 @@ void slmx4::init_serial()
 	if(tcgetattr(device_id, &tty) != 0) {
 	    printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
 	}
+
 
 	termios_config();
 
