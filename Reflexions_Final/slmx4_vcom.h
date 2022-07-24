@@ -9,6 +9,11 @@
 #include <string.h>
 #include <termios.h> // Contains POSIX terminal control definitions
 #include <unistd.h> // write(), read(), close()
+#include <stdint.h>
+
+#include "serialib.h"
+
+#define SERIAL_PORT "/dev/ttyACM0"
 
 class slmx4
 {
@@ -16,25 +21,29 @@ class slmx4
 public:
 	slmx4();
 
+	serialib serial;
+
 	void Begin();
-	void init_device();
-	void init_serial();
-	void termios_config();
-	void updateNumberOfSamplers();
+	void GetFrameNormalized();
+
+
 
 	void OpenRadar();
 	void CloseRadar();
-	void getData(void*, int);
-	void* Item(int CMD);
-	int device_id;
-	struct termios tty;
+
+	int check_ACK();
+
+
+private:
+
+	void init_device();
+	void init_serial();
+	void updateNumberOfSamplers();
 
 	int status;
 	int numSamplers;
 	int isOpen;
 
-private:
-	enum type{INT, CHAR, STRING};
 
 };
 
