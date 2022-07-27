@@ -12,8 +12,11 @@
 #include <stdint.h>
 
 #include "serialib.h"
+#include "Proto_Pulmo.h"
 
-#define SERIAL_PORT "/dev/ttyACM0"
+//#define SERIAL_PORT "/dev/ttyACM0"
+
+#define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
 
 class slmx4
 {
@@ -24,25 +27,33 @@ public:
 	serialib serial;
 
 	void Begin();
+	void End();
 	void GetFrameNormalized();
+	void GetFrameRaw();
 
-
+	int isOpen;
 
 	void OpenRadar();
 	void CloseRadar();
 
 	int check_ACK();
 
-
+#ifndef DEBUG
 private:
+#endif
+
+	enum cmds{rx_wait,frame_start,frame_end,ddc_en};
 
 	void init_device();
 	void init_serial();
 	void updateNumberOfSamplers();
+	void Iterations();
+
+	void TryUpdateChip(int);
 
 	int status;
 	int numSamplers;
-	int isOpen;
+
 
 
 };

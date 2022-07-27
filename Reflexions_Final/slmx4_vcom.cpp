@@ -8,7 +8,7 @@
 
 #define BUFF_SIZE 32
 
-#define SLEEP_US 1000
+#define SLEEP_US 500
 
 #define DEBUG
 
@@ -30,7 +30,8 @@ void slmx4::Begin()
 	OpenRadar();
 	//CloseRadar();
 
-	printf("numSamplers: %i", numSamplers);
+	while(!isOpen);
+
 
 	//cout << "bins = " << numSamplers << endl;
 }
@@ -41,7 +42,7 @@ void slmx4::init_device()
 
 #ifdef DEBUG
     if(!check_ACK()) { printf("SUCCESS: ACK from 'init_device'\n"); }
-    else { printf("ERROR: Reading ACK in 'init_serial'\n"); }
+    else { printf("ERROR: Reading ACK in 'init_device'\n"); }
 #endif
 }
 
@@ -70,9 +71,9 @@ void slmx4::OpenRadar()
     else { printf("ERROR from 'OpenRadar() \n"); }
 #endif
 
-	isOpen = 1;
-
 	updateNumberOfSamplers();
+
+	isOpen = 1;
 }
 
 void slmx4::CloseRadar()
@@ -96,12 +97,55 @@ void slmx4::updateNumberOfSamplers()
 
 	char* token = strtok(buffer, "<");
 	numSamplers = atoi(token);
+
+#ifdef DEBUG
+	printf("Samplers: %i\n", numSamplers);
+#endif
 }
 
-//void slmx4 TryUpdateChip(char* reg,)
-//{
-//
-//}
+void slmx4::Iterations()
+{
+	char buffer[BUFF_SIZE];
+
+	serial.writeString("VarGetValue_ByName(Iterations)");
+
+	serial.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
+
+	char* token = strtok(buffer, "<");
+	int iterations = atoi(token);
+
+#ifdef DEBUG
+	printf("Iterations: %i\n", iterations);
+#endif
+}
+
+void slmx4::TryUpdateChip(int cmd)
+{
+
+	switch(cmd)
+	{
+	case rx_wait:
+		serial.writeString("VarSetValue_ByName(rx_wait,0)");
+		break;
+	case frame_start:
+		serial.writeString("VarSetValue_ByName(frame_start,0)");
+		break;
+	case frame_end:
+		serial.writeString("VarSetValue_ByName(frame_end,4.0)");
+		break;
+	case ddc_en:
+			serial.writeString("VarSetValue_ByName(ddc_en,1)");
+		break;
+	}
+
+#ifdef DEBUG
+    if(!check_ACK()) { printf("SUCCESS: ACK from 'TryUpdateChip'\n"); }
+    else { printf("ERROR: Reading ACK in 'TryUpdateChip'\n"); }
+#endif
+
+    updateNumberOfSamplers();
+
+}
 
 void slmx4::init_serial()
 {
@@ -119,29 +163,63 @@ void slmx4::init_serial()
     }
 }
 
+void slmx4::GetFrameRaw()
+{
+	static int frameSize = (numSamplers * 8) + 5;
+
+	//int i = frameSize;
+	char* buffer = (char*)malloc(frameSize+32);
+
+	serial.writeString("GetFrameRaw()");
+
+
+	//while(--i)//buffer != '<')
+	//	{
+			serial.readBytes(&buffer, frameSize, 1, 10);
+			//if(++i > frameSize)
+			//	printf("Frame size error");
+	//		if(!(i%30))
+	//			printf("\n");
+	//		else
+	//			printf("%i ", buffer);
+	//	}
+
+	for(int i = 0; i < 100; ++i)
+		printf("%i ", buffer[i]);
+
+	free(buffer);
+
+}
+
 void slmx4::GetFrameNormalized()
 {
-	int frameSize = (numSamplers * 4 + 5);
+	//int frameSize = (numSamplers * 4 + 5);
+	//int frameSize = 11;
 
-	char frame[frameSize];
-	int i = 0;
+	//char frame[frameSize];
+	int i = 10;
 
-	char buffer;
+	printf("\n\nok\n");
 
-	while(buffer != '<')
+	char buffer;//= 'P';
+
+	while(--i)//buffer != '<')
 	{
-		printf("buffer: %c", buffer);
-		frame[i] = serial.readChar(&buffer, SLEEP_US);
-		if(++i > frameSize)
-			printf("Frame size error");
+		serial.readBytes(&buffer, 1, 1, SLEEP_US);
+		//if(++i > frameSize)
+		//	printf("Frame size error");
+		printf("%i . ", buffer);
 	}
 
 #ifdef DEBUG
-	for(int j = 0; j < frameSize; ++j)
-		printf("%c ", frame[j]);
+//	for(int j = 0; j < frameSize; ++j)
+//		printf("%c ", frame[j]);
 #endif
 
 }
 
-
+void slmx4::End()
+{
+	CloseRadar();
+}
 
