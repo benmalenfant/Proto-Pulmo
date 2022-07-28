@@ -1,12 +1,23 @@
 #include "sendosc.h"
 #include "slmx4_vcom.h"
 #include "Proto_Pulmo.h"
-//#include "matlab_XEP.h"
+#include "filters.h"
+
+#include "testData.h"
 
 
 
 int main()
 {
+	filter_data_t filter1_data;
+
+	filter1_data.gain = 0.01;
+	filter1_data.output = 0.02;
+	filter1_data.input[0] = 0.02;
+
+	float output = updateFilter(0.5, &filter1_data);
+
+	/*
 
 	slmx4 sensor;
 	//sensor.init_serial();
@@ -31,7 +42,7 @@ int main()
 
 	sensor.End();
 
-
+*/
 	return 0;
 }
 
