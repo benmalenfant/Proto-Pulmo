@@ -1,0 +1,22 @@
+[
+{
+  "directory": "/home/jef/eclipse-workspace/Reflexions_Final/build/cmake.debug.linux.x86_64",
+  "command": "/usr/bin/c++   -I/usr/include/oscpack -I/usr/local/include/oscpack -I/home/jef/eclipse-workspace/Reflexions_Final/serialib  -g -Wall   -std=gnu++11 -o CMakeFiles/versionOne.dir/main.cpp.o -c /home/jef/eclipse-workspace/Reflexions_Final/main.cpp",
+  "file": "/home/jef/eclipse-workspace/Reflexions_Final/main.cpp"
+},
+{
+  "directory": "/home/jef/eclipse-workspace/Reflexions_Final/build/cmake.debug.linux.x86_64",
+  "command": "/usr/bin/c++   -I/usr/include/oscpack -I/usr/local/include/oscpack -I/home/jef/eclipse-workspace/Reflexions_Final/serialib  -g -Wall   -std=gnu++11 -o CMakeFiles/versionOne.dir/sendosc.cpp.o -c /home/jef/eclipse-workspace/Reflexions_Final/sendosc.cpp",
+  "file": "/home/jef/eclipse-workspace/Reflexions_Final/sendosc.cpp"
+},
+{
+  "directory": "/home/jef/eclipse-workspace/Reflexions_Final/build/cmake.debug.linux.x86_64",
+  "command": "/usr/bin/c++   -I/usr/include/oscpack -I/usr/local/include/oscpack -I/home/jef/eclipse-workspace/Reflexions_Final/serialib  -g -Wall   -std=gnu++11 -o CMakeFiles/versionOne.dir/slmx4_vcom.cpp.o -c /home/jef/eclipse-workspace/Reflexions_Final/slmx4_vcom.cpp",
+  "file": "/home/jef/eclipse-workspace/Reflexions_Final/slmx4_vcom.cpp"
+},
+{
+  "directory": "/home/jef/eclipse-workspace/Reflexions_Final/build/cmake.debug.linux.x86_64",
+  "command": "/usr/bin/c++   -I/usr/include/oscpack -I/usr/local/include/oscpack -I/home/jef/eclipse-workspace/Reflexions_Final/serialib  -g -Wall   -std=gnu++11 -o CMakeFiles/versionOne.dir/serialib.cpp.o -c /home/jef/eclipse-workspace/Reflexions_Final/serialib.cpp",
+  "file": "/home/jef/eclipse-workspace/Reflexions_Final/serialib.cpp"
+}
+]
