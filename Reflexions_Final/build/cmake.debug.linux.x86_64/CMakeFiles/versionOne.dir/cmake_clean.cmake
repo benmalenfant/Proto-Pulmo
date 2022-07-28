@@ -1,4 +1,5 @@
 file(REMOVE_RECURSE
+  "CMakeFiles/versionOne.dir/async_serial.cpp.o"
   "CMakeFiles/versionOne.dir/main.cpp.o"
   "CMakeFiles/versionOne.dir/sendosc.cpp.o"
   "CMakeFiles/versionOne.dir/serialib.cpp.o"

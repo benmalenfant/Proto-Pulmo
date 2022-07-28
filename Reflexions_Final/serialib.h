@@ -110,6 +110,8 @@ public:
     // ::: Configuration and initialization :::
 
 
+    int             fd;	//MADE PUBLIC: Julian
+
     // Open a device
     char openDevice(const char *Device, const unsigned int Bauds,
                     SerialDataBits Databits = SERIAL_DATABITS_8,
@@ -220,19 +222,6 @@ private:
     bool            currentStateRTS;
     bool            currentStateDTR;
 
-
-
-
-
-#if defined (_WIN32) || defined( _WIN64)
-    // Handle on serial device
-    HANDLE          hSerial;
-    // For setting serial port timeouts
-    COMMTIMEOUTS    timeouts;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
-    int             fd;
-#endif
 
 };
 

@@ -169,6 +169,33 @@ versionOne/fast:
 	$(MAKE) -f CMakeFiles/versionOne.dir/build.make CMakeFiles/versionOne.dir/build
 .PHONY : versionOne/fast
 
+async_serial.o: async_serial.cpp.o
+
+.PHONY : async_serial.o
+
+# target to build an object file
+async_serial.cpp.o:
+	$(MAKE) -f CMakeFiles/versionOne.dir/build.make CMakeFiles/versionOne.dir/async_serial.cpp.o
+.PHONY : async_serial.cpp.o
+
+async_serial.i: async_serial.cpp.i
+
+.PHONY : async_serial.i
+
+# target to preprocess a source file
+async_serial.cpp.i:
+	$(MAKE) -f CMakeFiles/versionOne.dir/build.make CMakeFiles/versionOne.dir/async_serial.cpp.i
+.PHONY : async_serial.cpp.i
+
+async_serial.s: async_serial.cpp.s
+
+.PHONY : async_serial.s
+
+# target to generate assembly for a file
+async_serial.cpp.s:
+	$(MAKE) -f CMakeFiles/versionOne.dir/build.make CMakeFiles/versionOne.dir/async_serial.cpp.s
+.PHONY : async_serial.cpp.s
+
 main.o: main.cpp.o
 
 .PHONY : main.o
@@ -290,6 +317,9 @@ help:
 	@echo "... edit_cache"
 	@echo "... install/local"
 	@echo "... versionOne"
+	@echo "... async_serial.o"
+	@echo "... async_serial.i"
+	@echo "... async_serial.s"
 	@echo "... main.o"
 	@echo "... main.i"
 	@echo "... main.s"

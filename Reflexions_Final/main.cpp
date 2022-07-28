@@ -3,8 +3,10 @@
 #include "Proto_Pulmo.h"
 //#include "matlab_XEP.h"
 
+#define FULL
 
 
+#ifdef FULL
 int main()
 {
 
@@ -22,7 +24,7 @@ int main()
 	sensor.TryUpdateChip(slmx4::frame_end);
 	sensor.TryUpdateChip(slmx4::ddc_en);
 
-	sensor.GetFrameRaw();
+	//sensor.GetFrameRaw();
 
 
 	//sensor.GetFrameNormalized();
@@ -34,6 +36,14 @@ int main()
 
 	return 0;
 }
+#else
+int main()
+{
+	Serial test;
 
-
+	test.Connect("/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00", 115200);
+	sleep(2);
+	test.Disconnect();
+}
+#endif
 

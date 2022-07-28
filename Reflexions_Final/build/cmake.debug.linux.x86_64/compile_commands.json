@@ -18,5 +18,10 @@
   "directory": "/home/jef/eclipse-workspace/Reflexions_Final/build/cmake.debug.linux.x86_64",
   "command": "/usr/bin/c++   -I/usr/include/oscpack -I/usr/local/include/oscpack -I/home/jef/eclipse-workspace/Reflexions_Final/serialib  -g -Wall   -std=gnu++11 -o CMakeFiles/versionOne.dir/serialib.cpp.o -c /home/jef/eclipse-workspace/Reflexions_Final/serialib.cpp",
   "file": "/home/jef/eclipse-workspace/Reflexions_Final/serialib.cpp"
+},
+{
+  "directory": "/home/jef/eclipse-workspace/Reflexions_Final/build/cmake.debug.linux.x86_64",
+  "command": "/usr/bin/c++   -I/usr/include/oscpack -I/usr/local/include/oscpack -I/home/jef/eclipse-workspace/Reflexions_Final/serialib  -g -Wall   -std=gnu++11 -o CMakeFiles/versionOne.dir/async_serial.cpp.o -c /home/jef/eclipse-workspace/Reflexions_Final/async_serial.cpp",
+  "file": "/home/jef/eclipse-workspace/Reflexions_Final/async_serial.cpp"
 }
 ]

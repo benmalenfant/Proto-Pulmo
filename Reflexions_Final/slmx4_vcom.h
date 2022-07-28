@@ -12,6 +12,7 @@
 #include <stdint.h>
 
 #include "serialib.h"
+#include "async_serial.h"
 #include "Proto_Pulmo.h"
 
 //#define SERIAL_PORT "/dev/ttyACM0"
@@ -24,7 +25,8 @@ class slmx4
 public:
 	slmx4();
 
-	serialib serial;
+	serialib serial_tx;
+	Serial serial_rx;
 
 	void Begin();
 	void End();

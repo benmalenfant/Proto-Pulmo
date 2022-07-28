@@ -1,6 +1,7 @@
 // C library headers
 
 #include "slmx4_vcom.h"
+#include "sendosc.h"
 
 
 
@@ -38,11 +39,13 @@ void slmx4::Begin()
 
 void slmx4::init_device()
 {
-	serial.writeString("NVA_CreateHandle()");
+	serial_tx.writeString("NVA_CreateHandle()");
 
 #ifdef DEBUG
-    if(!check_ACK()) { printf("SUCCESS: ACK from 'init_device'\n"); }
-    else { printf("ERROR: Reading ACK in 'init_device'\n"); }
+    if(!check_ACK()) { printf("SUCCESS: ACK from 'init_device'\n");
+    sendosc(string_, (void*)"SUCCESS: ACK from 'init_device'");}
+    else { printf("ERROR: Reading ACK in 'init_device'\n");
+    sendosc(string_, (void*)"ERROR: Reading ACK in 'init_device'\n");}
 #endif
 }
 
@@ -51,7 +54,9 @@ int slmx4::check_ACK()
 {
 	char buffer[BUFF_SIZE];
 
-	serial.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
+	//printf("Avail: %i\n", serial_rx.Available());
+
+	serial_tx.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
 
 	if(!strcmp(buffer, "<ACK>")) { return 0; }
 	else
@@ -59,16 +64,19 @@ int slmx4::check_ACK()
 		//TODO stderr <<
 		return -1;
 	}
+
 }
 
 
 void slmx4::OpenRadar()
 {
-	serial.writeString("OpenRadar(X4)");
+	serial_tx.writeString("OpenRadar(X4)");
 
 #ifdef DEBUG
-    if(!check_ACK()) { printf("SUCCESS: ACK from 'OpenRadar'\n"); }
-    else { printf("ERROR from 'OpenRadar() \n"); }
+    if(!check_ACK()) { printf("SUCCESS: ACK from 'OpenRadar'\n");
+    sendosc(string_, (void*)"SUCCESS: ACK from 'OpenRadar'");}
+    else { printf("ERROR: Reading ACK in 'OpenRadar'\n");
+    sendosc(string_, (void*)"ERROR: Reading ACK in 'OpenRadar'\n");}
 #endif
 
 	updateNumberOfSamplers();
@@ -78,11 +86,14 @@ void slmx4::OpenRadar()
 
 void slmx4::CloseRadar()
 {
-	serial.writeString("Close()");
+	serial_tx.writeString("Close()");
+	serial_rx.Disconnect();
 
 #ifdef DEBUG
-    if(!check_ACK()) { printf("SUCCESS: ACK from 'CloseRadar'\n"); }
-    else { printf("ERROR: Reading ACK in 'CloseRadar'\n"); }
+    if(!check_ACK()) { printf("SUCCESS: ACK from 'CloseRadar'\n");
+    sendosc(string_, (void*)"SUCCESS: ACK from 'CloseRadar'");}
+    else { printf("ERROR: Reading ACK in 'CloseRadar'\n");
+    sendosc(string_, (void*)"ERROR: Reading ACK in 'CloseRadar'\n");}
 #endif
 }
 
@@ -91,15 +102,18 @@ void slmx4::updateNumberOfSamplers()
 {
 	char buffer[BUFF_SIZE];
 
-	serial.writeString("VarGetValue_ByName(SamplersPerFrame)");
+	serial_tx.writeString("VarGetValue_ByName(SamplersPerFrame)");
 
-	serial.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
+	serial_tx.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
 
 	char* token = strtok(buffer, "<");
 	numSamplers = atoi(token);
 
 #ifdef DEBUG
-	printf("Samplers: %i\n", numSamplers);
+	char text[32];
+	sprintf(text, "Samplers: %i\n", numSamplers);
+	printf("%s",text);
+	sendosc(string_, (void*)text);
 #endif
 }
 
@@ -107,9 +121,9 @@ void slmx4::Iterations()
 {
 	char buffer[BUFF_SIZE];
 
-	serial.writeString("VarGetValue_ByName(Iterations)");
+	serial_tx.writeString("VarGetValue_ByName(Iterations)");
 
-	serial.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
+	serial_tx.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
 
 	char* token = strtok(buffer, "<");
 	int iterations = atoi(token);
@@ -125,22 +139,24 @@ void slmx4::TryUpdateChip(int cmd)
 	switch(cmd)
 	{
 	case rx_wait:
-		serial.writeString("VarSetValue_ByName(rx_wait,0)");
+		serial_tx.writeString("VarSetValue_ByName(rx_wait,0)");
 		break;
 	case frame_start:
-		serial.writeString("VarSetValue_ByName(frame_start,0)");
+		serial_tx.writeString("VarSetValue_ByName(frame_start,0)");
 		break;
 	case frame_end:
-		serial.writeString("VarSetValue_ByName(frame_end,4.0)");
+		serial_tx.writeString("VarSetValue_ByName(frame_end,4.0)");
 		break;
 	case ddc_en:
-			serial.writeString("VarSetValue_ByName(ddc_en,1)");
+			serial_tx.writeString("VarSetValue_ByName(ddc_en,1)");
 		break;
 	}
 
 #ifdef DEBUG
-    if(!check_ACK()) { printf("SUCCESS: ACK from 'TryUpdateChip'\n"); }
-    else { printf("ERROR: Reading ACK in 'TryUpdateChip'\n"); }
+    if(!check_ACK()) { printf("SUCCESS: ACK from 'TryUpdateChip'\n");
+    sendosc(string_, (void*)"SUCCESS: ACK from 'TryUpdateChip'");}
+    else { printf("ERROR: Reading ACK in 'TryUpdateChip'\n");
+    sendosc(string_, (void*)"ERROR: Reading ACK in 'TryUpdateChip'\n");}
 #endif
 
     updateNumberOfSamplers();
@@ -149,17 +165,23 @@ void slmx4::TryUpdateChip(int cmd)
 
 void slmx4::init_serial()
 {
-	// Connection to serial port
-	char errorOpening = serial.openDevice(SERIAL_PORT, 115200);
+	// Connection to serial_tx port
+	char errorOpening = serial_tx.openDevice(SERIAL_PORT, 115200);
+	//serial_rx.Connect(SERIAL_PORT, 115200);
 
     // If connection fails, return the error code otherwise, display a success message
-    if (errorOpening!=1)
-    	printf ("ERROR connection to serial port: %i\n", (int)errorOpening);
+    if (errorOpening != 1)
+    {
+    	printf ("ERROR connection to serial port: %i\n", errorOpening);
+    	sendosc(string_, (void*)"ERROR connection to serial port");
+    }
+
     else
     {
     	printf ("Successful connection to %s\n",SERIAL_PORT);
-    	serial.setDTR();
-    	serial.setRTS();
+    	sendosc(string_, (void*)"Successful connection to serial port");
+    	serial_tx.setDTR();
+    	serial_tx.setRTS();
     }
 }
 
@@ -170,12 +192,12 @@ void slmx4::GetFrameRaw()
 	//int i = frameSize;
 	char* buffer = (char*)malloc(frameSize+32);
 
-	serial.writeString("GetFrameRaw()");
+	serial_tx.writeString("GetFrameRaw()");
 
 
 	//while(--i)//buffer != '<')
 	//	{
-			serial.readBytes(&buffer, frameSize, 1, 10);
+			serial_tx.readBytes(&buffer, frameSize, 1, 10);
 			//if(++i > frameSize)
 			//	printf("Frame size error");
 	//		if(!(i%30))
@@ -205,7 +227,7 @@ void slmx4::GetFrameNormalized()
 
 	while(--i)//buffer != '<')
 	{
-		serial.readBytes(&buffer, 1, 1, SLEEP_US);
+		serial_tx.readBytes(&buffer, 1, 1, SLEEP_US);
 		//if(++i > frameSize)
 		//	printf("Frame size error");
 		printf("%i . ", buffer);

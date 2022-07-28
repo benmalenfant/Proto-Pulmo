@@ -16,12 +16,16 @@ include_directories(/usr/local/include/oscpack)
 include_directories("serialib")
 
 link_directories(/usr/local/lib)
+
+find_package (Threads)
+
   
 set(CMAKE_CXX_FLAGS "-g -Wall")
 set(CMAKE_C_FLAGS "-g -Wall")
 
-add_executable(versionOne main.cpp sendosc.cpp slmx4_vcom.cpp serialib.cpp)
+add_executable(versionOne main.cpp sendosc.cpp slmx4_vcom.cpp serialib.cpp async_serial.cpp)
 target_link_libraries(versionOne oscpack ${LIBS})
+target_link_libraries (versionOne oscpack ${CMAKE_THREAD_LIBS_INIT})
 
 INSTALL(TARGETS versionOne RUNTIME DESTINATION bin)
 
