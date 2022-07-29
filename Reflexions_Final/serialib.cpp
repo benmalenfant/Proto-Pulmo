@@ -36,11 +36,11 @@ serialib::serialib()
 
     fd = -1;
     threadRunning = 0;
-
     params._fd = &fd;
     params._threadRunning = &threadRunning;
 
 }
+
 
 
 /*!
@@ -211,6 +211,10 @@ char serialib::openDevice(const char *Device, const unsigned int Bauds,
 
 }
 
+void serialib::set_buffer_ptr(charBuffer* _ptr)
+{
+	read_buff_ptr = _ptr;
+}
 
 int serialib::start_thread()
 {
@@ -418,12 +422,13 @@ int serialib::readStringNoTimeOut(char *receivedString,char finalChar,unsigned i
 int serialib::readString(char *receivedString,char finalChar,unsigned int maxNbBytes,unsigned int timeOut_ms)
 {
     // Check if timeout is requested
-    if (timeOut_ms==0) return readStringNoTimeOut(receivedString,finalChar,maxNbBytes);
+    if (timeOut_ms==0) return -1;//readStringNoTimeOut(receivedString,finalChar,maxNbBytes);
 
     // Number of bytes read
     unsigned int    nbBytes=0;
     // Character read on serial device
     char            charRead;
+    char prev_rec = NULL;
     // Timer used for timeout
     timeOut         timer;
     long int        timeOutParam;
@@ -435,13 +440,28 @@ int serialib::readString(char *receivedString,char finalChar,unsigned int maxNbB
     while (nbBytes<maxNbBytes)
     {
         // Compute the TimeOut for the next call of ReadChar
-        timeOutParam = timeOut_ms-timer.elapsedTime_ms();
+        //timeOutParam = timeOut_ms-timer.elapsedTime_ms();
 
         // If there is time remaining
-        if (timeOutParam>0)
-        {
+        //if (timeOutParam>0)
+       // {
             // Wait for a byte on the serial link with the remaining time as timeout
-            charRead=readChar(&receivedString[nbBytes],timeOutParam);
+        	while(isBufferEmpty(read_buff_ptr))
+        	{
+                // Check if timeout is reached
+                if (timer.elapsedTime_ms()>timeOut_ms)
+                	 return 0;
+        	}
+        	char _rec;
+            bufferRead(read_buff_ptr, _rec);
+
+            if(_rec != prev_rec)
+            {
+            	prev_rec = _rec;
+            	receivedString[nbBytes] = _rec;
+            	charRead = 1;
+            }
+        	//charRead=readChar(&receivedString[nbBytes],timeOutParam);
 
             // If a byte has been received
             if (charRead==1)
@@ -460,7 +480,7 @@ int serialib::readString(char *receivedString,char finalChar,unsigned int maxNbB
             // Check if an error occured during reading char
             // If an error occurend, return the error number
             if (charRead<0) return charRead;
-        }
+        //}
         // Check if timeout is reached
         if (timer.elapsedTime_ms()>timeOut_ms)
         {
@@ -886,7 +906,7 @@ static void serial_rx_callback(char data[], int length)
     int i;
     //Put data into buffer.
     for (i = 0; i < length; i++) {
-    	printf("calbak: %c\n", data[i]);
+    	//printf("calbak: %c\n", data[i]);
         bufferWrite(read_buff_ptr,data[i]);
     }
 

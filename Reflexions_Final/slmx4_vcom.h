@@ -25,7 +25,9 @@ class slmx4
 {
 
 public:
-	slmx4();
+	slmx4(charBuffer* buff_ptr);
+
+
 
 #ifndef ASYNC
 	serialib serial;
@@ -60,7 +62,7 @@ private:
 
 	int status;
 	int numSamplers;
-
+	charBuffer* buf_ptr;
 
 
 };

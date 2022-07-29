@@ -15,11 +15,12 @@
 
 #ifndef ASYNC
 
-slmx4::slmx4()
+slmx4::slmx4(charBuffer* buff_ptr)
 {
 	isOpen = 0;
 	numSamplers = 0;
 	status = -1;
+	buf_ptr = buff_ptr;
 }
 
 void slmx4::Begin()
@@ -27,6 +28,7 @@ void slmx4::Begin()
 	init_serial();
 
 	//init_device();
+	serial.start_thread();
 
 	OpenRadar();
 	//CloseRadar();
@@ -53,12 +55,15 @@ void slmx4::init_device()
 int slmx4::check_ACK()
 {
 	char buffer[BUFFER_SIZE];
+	char ack_[6];
 
 	//printf("Avail: %i\n", serial_rx.Available());
 
 	serial.readString(buffer, '0', BUFFER_SIZE, SLEEP_US);
 
-	if(!strcmp(buffer, "<ACK>")) { return 0; }
+	memcpy(ack_, buffer, 5);
+
+	if(!strcmp(ack_, "<ACK>")) { return 0; }
 	else
 	{
 		//TODO stderr <<
@@ -89,13 +94,13 @@ void slmx4::CloseRadar()
 	serial.writeString("Close()");
 
 
-/*#ifdef DEBUG
+#ifdef DEBUG
     if(!check_ACK()) { printf("SUCCESS: ACK from 'CloseRadar'\n");
     sendosc(string_, (void*)"SUCCESS: ACK from 'CloseRadar'");}
     else { printf("ERROR: Reading ACK in 'CloseRadar'\n");
     sendosc(string_, (void*)"ERROR: Reading ACK in 'CloseRadar'\n");}
 #endif
-*/
+
 }
 
 
@@ -105,9 +110,11 @@ void slmx4::updateNumberOfSamplers()
 
 	serial.writeString("VarGetValue_ByName(SamplersPerFrame)");
 
-
+	usleep(10);
 
 	serial.readString(buffer, '0', BUFFER_SIZE, SLEEP_US);
+
+	//printf("%s\n", buffer);
 
 	char* token = strtok(buffer, "<");
 	numSamplers = atoi(token);
@@ -116,7 +123,7 @@ void slmx4::updateNumberOfSamplers()
 	char text[32];
 	sprintf(text, "Samplers: %i\n", numSamplers);
 	printf("%s",text);
-	sendosc(string_, (void*)text);
+	//sendosc(string_, (void*)text);
 #endif
 }
 
@@ -151,7 +158,7 @@ void slmx4::TryUpdateChip(int cmd)
 		serial.writeString("VarSetValue_ByName(frame_end,4.0)");
 		break;
 	case ddc_en:
-			serial.writeString("VarSetValue_ByName(ddc_en,1)");
+		serial.writeString("VarSetValue_ByName(ddc_en,1)");
 		break;
 	}
 
@@ -170,7 +177,9 @@ void slmx4::init_serial()
 {
 	// Connection to serial port
 	char errorOpening = serial.openDevice(SERIAL_PORT, 115200);
-	//serial_rx.Connect(SERIAL_PORT, 115200);
+
+	// Share buffer ptr to serial module
+	serial.set_buffer_ptr(buf_ptr);
 
     // If connection fails, return the error code otherwise, display a success message
     if (errorOpening != 1)

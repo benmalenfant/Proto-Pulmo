@@ -15,18 +15,19 @@
 int main()
 {
 
-	slmx4 sensor;
+
 
 	bufferInit(myBuffer,1024,char);
 	myBuffer_ptr = &myBuffer;
 	set_buff_ptr(myBuffer_ptr);	//Make buffer ptr available to thread
 
+	slmx4 sensor(myBuffer_ptr);
 
 	sensor.Begin();
 
 
 
-	sensor.Iterations();
+	//sensor.Iterations();
 
 	sensor.TryUpdateChip(slmx4::rx_wait);
 	sensor.TryUpdateChip(slmx4::frame_start);
@@ -37,7 +38,7 @@ int main()
 
 
 
-	sensor.serial.start_thread();
+
 
 	//sensor.GetFrameRaw();
 
@@ -62,7 +63,7 @@ int main()
 		printf("READ:   %c\n", _read);
 	}
 
-
+	bufferDestroy(myBuffer_ptr);
 
 	return 0;
 }

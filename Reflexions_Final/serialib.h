@@ -109,6 +109,7 @@ public:
     int             fd;	//MADE PUBLIC: Julian
     int threadRunning;
     thread_args params;
+    charBuffer* read_buff_ptr;
 
     // Open a device
     char openDevice(const char *Device, const unsigned int Bauds,
@@ -126,6 +127,7 @@ public:
 
 
 
+    void set_buffer_ptr(charBuffer*);
 
     //___________________________________________
     // ::: Read/Write operation on characters :::
