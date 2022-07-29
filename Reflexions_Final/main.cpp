@@ -1,17 +1,26 @@
 #include "sendosc.h"
 #include "slmx4_vcom.h"
 #include "Proto_Pulmo.h"
-//#include "matlab_XEP.h"
+#include "serialib.h"
+#include <stdio.h>
+
+	// Initialise circular buffer.
+	charBuffer myBuffer;
+
+	charBuffer* myBuffer_ptr;
+
 
 #define FULL
-
-
 #ifdef FULL
 int main()
 {
 
 	slmx4 sensor;
-	//sensor.init_serial();
+
+	bufferInit(myBuffer,1024,char);
+	myBuffer_ptr = &myBuffer;
+	set_buff_ptr(myBuffer_ptr);	//Make buffer ptr available to thread
+
 
 	sensor.Begin();
 
@@ -24,6 +33,12 @@ int main()
 	sensor.TryUpdateChip(slmx4::frame_end);
 	sensor.TryUpdateChip(slmx4::ddc_en);
 
+
+
+
+
+	sensor.serial.start_thread();
+
 	//sensor.GetFrameRaw();
 
 
@@ -31,19 +46,36 @@ int main()
 
 	//sendosc();	//Test sine
 
+	//sleep(1);
+
 	sensor.End();
+
+	sleep(1);
+
+	sensor.serial.threadRunning=0;
+	close(sensor.serial.fd);
+
+	for(int i = 5; i; --i)
+	{
+		char _read;
+		bufferRead(myBuffer_ptr,_read);
+		printf("READ:   %c\n", _read);
+	}
+
 
 
 	return 0;
 }
+
+
 #else
 int main()
 {
-	Serial test;
+	slmx4 sensor;
+	//sensor.init_serial();
 
-	test.Connect("/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00", 115200);
-	sleep(2);
-	test.Disconnect();
+	sensor.Begin();
+	sensor.End();
 }
 #endif
 

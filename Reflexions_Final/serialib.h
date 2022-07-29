@@ -19,26 +19,7 @@ This is a licence-free software, it can be used by anyone who try to build a bet
 #ifndef SERIALIB_H
 #define SERIALIB_H
 
-#if defined(__CYGWIN__)
-    // This is Cygwin special case
-    #include <sys/time.h>
-#endif
 
-// Include for windows
-#if defined (_WIN32) || defined (_WIN64)
-#if defined(__GNUC__)
-    // This is MinGW special case
-    #include <sys/time.h>
-#else
-    // sys/time.h does not exist on "actual" Windows
-    #define NO_POSIX_TIME
-#endif
-    // Accessing to the serial port under Windows
-    #include <windows.h>
-#endif
-
-// Include for Linux
-#if defined (__linux__) || defined(__APPLE__)
     #include <stdlib.h>
     #include <sys/types.h>
     #include <sys/shm.h>
@@ -50,7 +31,15 @@ This is a licence-free software, it can be used by anyone who try to build a bet
     #include <fcntl.h>
     #include <unistd.h>
     #include <sys/ioctl.h>
-#endif
+	#include "ring_buffer.h"
+
+
+
+// So we can use this in any method, this gives us a typedef
+// named 'intBuffer'.
+ringBuffer_typedef(char, charBuffer);
+
+void set_buff_ptr(charBuffer* _ptr);
 
 /*! To avoid unused parameters */
 #define UNUSED(x) (void)(x)
@@ -86,6 +75,13 @@ enum SerialParity {
     SERIAL_PARITY_SPACE /**< space bit */
 };
 
+
+typedef struct thread_args
+{
+	int* _fd;
+	int* _threadRunning;
+} thread_args;
+
 /*!  \class     serialib
      \brief     This class is used for communication over a serial device.
 */
@@ -111,6 +107,8 @@ public:
 
 
     int             fd;	//MADE PUBLIC: Julian
+    int threadRunning;
+    thread_args params;
 
     // Open a device
     char openDevice(const char *Device, const unsigned int Bauds,
@@ -123,6 +121,8 @@ public:
 
     // Close the current device
     void    closeDevice();
+
+    int start_thread();
 
 
 
@@ -179,8 +179,6 @@ public:
     int     available();
 
 
-
-
     // _________________________
     // ::: Access to IO bits :::
 
@@ -223,6 +221,12 @@ private:
     bool            currentStateDTR;
 
 
+    pthread_t rx_thread;
+
+
+    void serial_rx_callback(char data[], int length);
+    //static void* serial_data_listener(void *param);
+    void buffer_put(char* data);
 };
 
 

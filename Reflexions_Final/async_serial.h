@@ -1,13 +1,17 @@
+
 #ifndef SERIAL_H
 #define SERIAL_H
 
 #define BUFF_SIZE 512
-#define POLL_TIMEOUT 2000
+#define POLL_TIMEOUT 100
 
 #include <stdint.h>
+#include <cstring>
+#include <sys/ioctl.h>
 
 
 typedef struct serial_s serial_t;
+
 
 /**
  * Create the serial structure.
@@ -29,7 +33,7 @@ void serial_destroy(serial_t* s);
  * @param baud - baud rate for connection.
  * @return -ve on error, 0 on success.
  */
-int serial_connect(serial_t* s, char device[], int baud, int _fd);
+int serial_connect(serial_t* s, char device[], int baud);
 
 /**
  * Send data.
@@ -45,6 +49,10 @@ int serial_send(serial_t* s, uint8_t data[], int length);
  * @param data - single character to be sent.
  */
 void serial_put(serial_t* s, uint8_t data);
+
+int serial_readStringNoTimeOut(serial_t* s, char *receivedString,char finalChar,unsigned int maxNbBytes);
+
+char serial_writeString(serial_t* s, const char* receivedString);
 
 /**
  * Determine how much data is available
@@ -82,7 +90,9 @@ void serial_clear(serial_t* s);
  */
 int serial_close(serial_t* s);
 
-int getfd(serial_t* s);
+void serial_setDTR(serial_t* s);
+
+void serial_setRTS(serial_t* s);
 
 class Serial
 {
@@ -96,13 +106,21 @@ public:
 		serial_destroy(_serial);
 	}
 
-	int Connect(char device[], int baud, int _fd)
+	int Connect(char device[], int baud)
 	{
-		return serial_connect(_serial, device, baud, _fd);
+		return serial_connect(_serial, device, baud);
 	}
 	int Send(uint8_t data[], int length)
 	{
 		return serial_send(_serial, data, length);
+	}
+	int readString(char *receivedString,char finalChar,unsigned int maxNbBytes)
+	{
+		return serial_readStringNoTimeOut(_serial,receivedString,finalChar,maxNbBytes);
+	}
+	char writeString(const char* data)
+	{
+		return serial_writeString(_serial, data);
 	}
 	void Put(uint8_t data)
 	{
@@ -128,12 +146,17 @@ public:
 	{
 		return serial_close(_serial);
 	}
-	int get_fd()
+	void setRTS()
 	{
-		return getfd(_serial);
+		return serial_setRTS(_serial);
+	}
+	void setDTR()
+	{
+		return serial_setDTR(_serial);
 	}
 private:
 	serial_t* _serial;
 };
+
 
 #endif

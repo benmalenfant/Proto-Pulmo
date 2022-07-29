@@ -16,7 +16,12 @@ This is a licence-free software, it can be used by anyone who try to build a bet
  */
 
 #include "serialib.h"
+#include "ring_buffer.h"
 
+static charBuffer* read_buff_ptr;
+
+static void *serial_data_listener(void *param);
+static void serial_rx_callback(char data[], int length);
 
 
 //_____________________________________
@@ -28,9 +33,13 @@ This is a licence-free software, it can be used by anyone who try to build a bet
 */
 serialib::serialib()
 {
-#if defined (__linux__) || defined(__APPLE__)
+
     fd = -1;
-#endif
+    threadRunning = 0;
+
+    params._fd = &fd;
+    params._threadRunning = &threadRunning;
+
 }
 
 
@@ -201,6 +210,28 @@ char serialib::openDevice(const char *Device, const unsigned int Bauds,
 #endif
 
 }
+
+
+int serialib::start_thread()
+{
+    //Only start if it is not currently running.
+    if (threadRunning != 1) {
+        //Set running.
+    	threadRunning = 1;
+        //Spawn thread.
+        int res;
+        res = pthread_create(&rx_thread, NULL, serial_data_listener, (void*)&params);
+        if (res != 0) {
+            return -2;
+        }
+        //Return result.
+        return 0;
+    } else {
+        return -1;
+    }
+}
+
+
 
 bool serialib::isDeviceOpen()
 {
@@ -508,15 +539,9 @@ int serialib::readBytes (void *buffer,unsigned int maxNbBytes,unsigned int timeO
 */
 char serialib::flushReceiver()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Purge receiver
-    return PurgeComm (hSerial, PURGE_RXCLEAR);
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Purge receiver
     tcflush(fd,TCIFLUSH);
     return true;
-#endif
 }
 
 
@@ -527,23 +552,10 @@ char serialib::flushReceiver()
 */
 int serialib::available()
 {    
-#if defined (_WIN32) || defined(_WIN64)
-    // Device errors
-    DWORD commErrors;
-    // Device status
-    COMSTAT commStatus;
-    // Read status
-    ClearCommError(hSerial, &commErrors, &commStatus);
-    // Return the number of pending bytes
-    return commStatus.cbInQue;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     int nBytes=0;
     // Return number of pending bytes in the receiver
     ioctl(fd, FIONREAD, &nBytes);
     return nBytes;
-#endif
-
 }
 
 
@@ -579,11 +591,6 @@ bool serialib::DTR(bool status)
 */
 bool serialib::setDTR()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Set DTR
-    currentStateDTR=true;
-    return EscapeCommFunction(hSerial,SETDTR);
-#endif
 #if defined (__linux__) || defined(__APPLE__)
     // Set DTR
     int status_DTR=0;
@@ -602,11 +609,6 @@ bool serialib::setDTR()
 */
 bool serialib::clearDTR()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Clear DTR
-    currentStateDTR=true;
-    return EscapeCommFunction(hSerial,CLRDTR);
-#endif
 #if defined (__linux__) || defined(__APPLE__)
     // Clear DTR
     int status_DTR=0;
@@ -647,11 +649,6 @@ bool serialib::RTS(bool status)
 */
 bool serialib::setRTS()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Set RTS
-    currentStateRTS=false;
-    return EscapeCommFunction(hSerial,SETRTS);
-#endif
 #if defined (__linux__) || defined(__APPLE__)
     // Set RTS
     int status_RTS=0;
@@ -672,11 +669,6 @@ bool serialib::setRTS()
 */
 bool serialib::clearRTS()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Clear RTS
-    currentStateRTS=false;
-    return EscapeCommFunction(hSerial,CLRRTS);
-#endif
 #if defined (__linux__) || defined(__APPLE__)
     // Clear RTS
     int status_RTS=0;
@@ -697,11 +689,6 @@ bool serialib::clearRTS()
   */
 bool serialib::isCTS()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    DWORD modemStat;
-    GetCommModemStatus(hSerial, &modemStat);
-    return modemStat & MS_CTS_ON;
-#endif
 #if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the CTS bit
@@ -719,11 +706,6 @@ bool serialib::isCTS()
   */
 bool serialib::isDSR()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    DWORD modemStat;
-    GetCommModemStatus(hSerial, &modemStat);
-    return modemStat & MS_DSR_ON;
-#endif
 #if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the DSR bit
@@ -745,11 +727,6 @@ bool serialib::isDSR()
   */
 bool serialib::isDCD()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    DWORD modemStat;
-    GetCommModemStatus(hSerial, &modemStat);
-    return modemStat & MS_RLSD_ON;
-#endif
 #if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the DCD bit
@@ -766,17 +743,10 @@ bool serialib::isDCD()
   */
 bool serialib::isRI()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    DWORD modemStat;
-    GetCommModemStatus(hSerial, &modemStat);
-    return modemStat & MS_RING_ON;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the RING bit
     ioctl(fd, TIOCMGET, &status);
     return status & TIOCM_RNG;
-#endif
 }
 
 
@@ -903,3 +873,80 @@ unsigned long int timeOut::elapsedTime_ms()
     return sec*1000+usec/1000;
 #endif
 }
+
+
+/***************************************************************************8/
+ * ASYNC
+ */
+
+//Callback to store data in buffer.
+static void serial_rx_callback(char data[], int length)
+{
+    //Put data into buffer.
+    int i;
+    //Put data into buffer.
+    for (i = 0; i < length; i++) {
+    	printf("calbak: %c\n", data[i]);
+        bufferWrite(read_buff_ptr,data[i]);
+    }
+
+}
+
+//Serial data listener thread.
+static void* serial_data_listener(void *param)
+{
+	const int buffer_size = 512;
+    int res = 0;
+    int err = 0;
+    uint8_t buff[buffer_size];
+
+    //Retrieve paramaters and store locally.
+    thread_args* args = (thread_args*) param;
+    int fd = *(args->_fd);
+
+    //Run until ended.
+    while (*(args->_threadRunning) != 0) {
+        //Poll socket for data.
+    	ioctl(fd, FIONREAD, &res);
+        //If data was recieved.
+        if (res > 0) {
+            //Fetch the data.
+            int count = read(*(args->_fd), &buff, buffer_size - 1);
+            //If data was recieved.
+            if (count > 0) {
+                //Pad end of buffer to ensure there is a termination symbol.
+                buff[count] = '\0';
+                // Call the serial callback.
+                serial_rx_callback((char *)buff, count);
+                //If an error occured.
+            } else if (count < 0) {
+                //Inform user and exit thread.
+                printf("Error: Serial disconnect\r\n");
+                err = 1;
+                break;
+            }
+            //If there was an error.
+        } else if (res < 0) {
+            //Inform user and exit thread.
+            printf("Error: Polling error in serial thread");
+            err = 1;
+            break;
+        }
+        //Otherwise, keep going around.
+    }
+    //If there was an error, close socket.
+    if (err) {
+        *(args->_threadRunning) = 0;
+        //raise(SIGLOST);
+    }
+    //Close file.
+    res = close(*(args->_fd));
+
+    return NULL;
+}
+
+void set_buff_ptr(charBuffer* _ptr)
+{
+	read_buff_ptr = _ptr;
+}
+

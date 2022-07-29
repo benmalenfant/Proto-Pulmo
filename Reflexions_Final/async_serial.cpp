@@ -1,5 +1,4 @@
 #include "async_serial.h"
-#include "serialib.h"
 
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -13,7 +12,6 @@
 #include <signal.h>
 #include <poll.h>
 #include <errno.h>
-
 
 /**
  * @struct Serial device structure.
@@ -139,10 +137,8 @@ void serial_destroy(serial_t* s)
 
 
 //Connect to serial device.
-int serial_connect(serial_t* s, char device[], int baud, int _fd)
+int serial_connect(serial_t* s, char device[], int baud)
 {
-	s->fd = _fd;
-	/*
     struct termios oldtio;
 
     // Resolve baud.
@@ -153,7 +149,7 @@ int serial_connect(serial_t* s, char device[], int baud, int _fd)
     }
 
     //Open device.
-    s->fd = open(device, O_RDWR | O_NOCTTY);
+    s->fd = open(device, O_RDWR | O_NOCTTY | O_NDELAY);
     //Catch file open error.
     if (s->fd < 0) {
         perror(device);
@@ -167,7 +163,6 @@ int serial_connect(serial_t* s, char device[], int baud, int _fd)
     tcflush(s->fd, TCIFLUSH);
     //Apply settings.
     tcsetattr(s->fd, TCSANOW, &oldtio);
-    */
 
     //Start listener thread.
     int res = serial_start(s);
@@ -187,6 +182,16 @@ int serial_send(serial_t* s, uint8_t data[], int length)
 {
     int res = write(s->fd, data, length);
     return res;
+}
+
+char serial_writeString(serial_t* s, const char *receivedString)
+{
+		// Lenght of the string
+	    int Lenght=strlen(receivedString);
+	    // Write the string
+	    if (write(s->fd,receivedString,Lenght)!=Lenght) return -1;
+	    // Write operation successfull
+	    return 1;
 }
 
 void serial_put(serial_t* s, uint8_t data)
@@ -367,7 +372,62 @@ static void *serial_data_listener(void *param)
     return NULL;
 }
 
-int getfd(serial_t* s)
+int serial_readStringNoTimeOut(serial_t* s, char *receivedString,char finalChar,unsigned int maxNbBytes)
 {
-	return s->fd;
+    // Number of characters read
+    unsigned int    NbBytes=0;
+    // Returned value from Read
+    char            charRead;
+
+    // While the buffer is not full
+    while (NbBytes<maxNbBytes)
+    {
+    	charRead=0;
+        // Fetch a character from buffer if available
+    	if(serial_available(s))
+    	{
+    		receivedString[NbBytes] = serial_get(s);
+    		charRead=1;
+    	}
+
+
+        // Check a character has been read
+        if (charRead==1)
+        {
+            // Check if this is the final char
+            if (receivedString[NbBytes]==finalChar)
+            {
+                // This is the final char, add zero (end of string)
+                receivedString  [++NbBytes]=0;
+                // Return the number of bytes read
+                return NbBytes;
+            }
+
+            // The character is not the final char, increase the number of bytes read
+            NbBytes++;
+        }
+
+        // An error occured while reading, return the error number
+        if (charRead<0) return charRead;
+    }
+    // Buffer is full : return -3
+    return -3;
+}
+
+void serial_setDTR(serial_t* s)
+{
+    // Set DTR
+    int status_DTR=0;
+    ioctl(s->fd, TIOCMGET, &status_DTR);
+    status_DTR |= TIOCM_DTR;
+    ioctl(s->fd, TIOCMSET, &status_DTR);
+}
+
+void serial_setRTS(serial_t* s)
+{
+    // Set RTS
+    int status_RTS=0;
+    ioctl(s->fd, TIOCMGET, &status_RTS);
+    status_RTS |= TIOCM_RTS;
+    ioctl(s->fd, TIOCMSET, &status_RTS);
 }

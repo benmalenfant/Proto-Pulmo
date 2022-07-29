@@ -12,10 +12,12 @@
 #include <stdint.h>
 
 #include "serialib.h"
-#include "async_serial.h"
+//#include "async_serial.h"
 #include "Proto_Pulmo.h"
 
 //#define SERIAL_PORT "/dev/ttyACM0"
+
+//#define ASYNC
 
 #define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
 
@@ -25,8 +27,11 @@ class slmx4
 public:
 	slmx4();
 
-	serialib serial_tx;
-	Serial serial_rx;
+#ifndef ASYNC
+	serialib serial;
+#else
+	Serial serial;
+#endif
 
 	void Begin();
 	void End();
