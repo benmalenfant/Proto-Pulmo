@@ -15,12 +15,11 @@
 
 #ifndef ASYNC
 
-slmx4::slmx4(charBuffer* buff_ptr)
+slmx4::slmx4()
 {
 	isOpen = 0;
 	numSamplers = 0;
 	status = -1;
-	buf_ptr = buff_ptr;
 }
 
 void slmx4::Begin()
@@ -28,7 +27,7 @@ void slmx4::Begin()
 	init_serial();
 
 	//init_device();
-	serial.start_thread();
+	//serial.start_thread();
 
 	OpenRadar();
 	//CloseRadar();
@@ -155,7 +154,7 @@ void slmx4::TryUpdateChip(int cmd)
 		serial.writeString("VarSetValue_ByName(frame_start,0)");
 		break;
 	case frame_end:
-		serial.writeString("VarSetValue_ByName(frame_end,4.0)");
+		serial.writeString("VarSetValue_ByName(frame_end,4)");
 		break;
 	case ddc_en:
 		serial.writeString("VarSetValue_ByName(ddc_en,1)");
@@ -179,7 +178,7 @@ void slmx4::init_serial()
 	char errorOpening = serial.openDevice(SERIAL_PORT, 115200);
 
 	// Share buffer ptr to serial module
-	serial.set_buffer_ptr(buf_ptr);
+	//serial.set_buffer_ptr(buf_ptr);
 
     // If connection fails, return the error code otherwise, display a success message
     if (errorOpening != 1)
@@ -200,60 +199,62 @@ void slmx4::init_serial()
 void slmx4::GetFrameRaw()
 {
 	static int frameSize = (numSamplers * 8) + 5;
-
-	//int i = frameSize;
-	char* buffer = (char*)malloc(frameSize+32);
+	int av = 0;
+	timeOut timer;
 
 	serial.writeString("GetFrameRaw()");
+	
+	timer.initTimer();
 
-
-	while(int av = serial.available() < frameSize)
+	while(1)
 	{
-		if(av>1)
+		av = serial.available();
+		if(av)
 			printf("Avail: %i\n", av);
-	};// < frameSize){};
+		
+		if(timer.elapsedTime_ms() > TIMEOUT_MS)
+		{
+			printf("TIMEOUT:(\n");
+			break;
+		}
+	
+	};
 
-	//for(int i = 0; i <= frameSize; ++i)
-	//{
-		//buffer[i] = serial_rx.Get();
-	//	printf("Available: %i \n", serial_rx.Available());
-	//}
 
-	//serial_rx.Disconnect();
-
-
-/*
-	for(int i = 0; i < 100; ++i)
-		printf("%i ", buffer[i]);
-		*/
-
-	free(buffer);
 
 }
 
 void slmx4::GetFrameNormalized()
 {
-	//int frameSize = (numSamplers * 4 + 5);
-	//int frameSize = 11;
+	int frameSize = (numSamplers * 8 + 5);
+	char frame[frameSize] = {0};
+	int av = 0;
+	
+	serial.writeString("GetFrameNormalized()");
+	
+	timeOut timer;
+	timer.initTimer();
 
-	//char frame[frameSize];
-	int i = 10;
-
-	printf("\n\nok\n");
-
-	char buffer;//= 'P';
-
-	while(--i)//buffer != '<')
+	while(1)
 	{
-		serial.readBytes(&buffer, 1, 1);
-		//if(++i > frameSize)
-		//	printf("Frame size error");
-		printf("%i . ", buffer);
+		av = serial.available();
+		if(timer.elapsedTime_ms() > TIMEOUT_MS)
+		{
+			printf("Timeout\n");
+			break;
+		}
+		if(av == frameSize)
+		{
+			serial.readBytes(&frame, frameSize, 0);
+			break;
+		}
+		
+
 	}
 
 #ifdef DEBUG
-//	for(int j = 0; j < frameSize; ++j)
-//		printf("%c ", frame[j]);
+	for(int j = 0; j < frameSize; ++j)
+		printf("%i ", frame[j]);
 #endif
 
 }
@@ -439,11 +440,6 @@ void slmx4::init_serial()
 }
 
 void slmx4::GetFrameRaw()
-{
-
-}
-
-void slmx4::GetFrameNormalized()
 {
 
 }

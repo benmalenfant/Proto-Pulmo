@@ -19,13 +19,15 @@
 
 //#define ASYNC
 
+#define TIMEOUT_MS 1000
+
 #define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
 
 class slmx4
 {
 
 public:
-	slmx4(charBuffer* buff_ptr);
+	slmx4();
 
 
 
@@ -48,7 +50,7 @@ public:
 	int check_ACK();
 
 #ifndef DEBUG
-private:
+//private:
 #endif
 
 	enum cmds{rx_wait,frame_start,frame_end,ddc_en};
@@ -62,7 +64,6 @@ private:
 
 	int status;
 	int numSamplers;
-	charBuffer* buf_ptr;
 
 
 };

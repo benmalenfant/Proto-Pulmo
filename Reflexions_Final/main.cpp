@@ -4,66 +4,34 @@
 #include "serialib.h"
 #include <stdio.h>
 
-	// Initialise circular buffer.
-	charBuffer myBuffer;
-
-	charBuffer* myBuffer_ptr;
-
+#define RUN_TIME 10
 
 #define FULL
 #ifdef FULL
 int main()
 {
-
-
-
-	bufferInit(myBuffer,1024,char);
-	myBuffer_ptr = &myBuffer;
-	set_buff_ptr(myBuffer_ptr);	//Make buffer ptr available to thread
-
-	slmx4 sensor(myBuffer_ptr);
+	slmx4 sensor;
 
 	sensor.Begin();
 
-
-
-	//sensor.Iterations();
+	sensor.Iterations();
 
 	sensor.TryUpdateChip(slmx4::rx_wait);
 	sensor.TryUpdateChip(slmx4::frame_start);
 	sensor.TryUpdateChip(slmx4::frame_end);
 	sensor.TryUpdateChip(slmx4::ddc_en);
+	
+	timeOut run_time;
+	run_time.initTimer();
 
-
-
-
-
-
-
-	//sensor.GetFrameRaw();
-
-
-	//sensor.GetFrameNormalized();
-
-	//sendosc();	//Test sine
-
-	//sleep(1);
+while(run_time.elapsedTime_ms() < 1000 * RUN_TIME)
+	sensor.GetFrameNormalized();
 
 	sensor.End();
 
-	sleep(1);
 
-	sensor.serial.threadRunning=0;
-	close(sensor.serial.fd);
 
-	for(int i = 5; i; --i)
-	{
-		char _read;
-		bufferRead(myBuffer_ptr,_read);
-		printf("READ:   %c\n", _read);
-	}
-
-	bufferDestroy(myBuffer_ptr);
+	//bufferDestroy(myBuffer_ptr);
 
 	return 0;
 }
