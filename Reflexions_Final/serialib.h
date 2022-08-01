@@ -5,37 +5,11 @@
 \version 2.0
 \date    december the 27th of 2019
 This Serial library is used to communicate through serial port.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE X CONSORTIUM BE LIABLE FOR ANY CLAIM,
-DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 This is a licence-free software, it can be used by anyone who try to build a better world.
 */
 
-
 #ifndef SERIALIB_H
 #define SERIALIB_H
-
-#if defined(__CYGWIN__)
-    // This is Cygwin special case
-    #include <sys/time.h>
-#endif
-
-// Include for windows
-#if defined (_WIN32) || defined (_WIN64)
-#if defined(__GNUC__)
-    // This is MinGW special case
-    #include <sys/time.h>
-#else
-    // sys/time.h does not exist on "actual" Windows
-    #define NO_POSIX_TIME
-#endif
-    // Accessing to the serial port under Windows
-    #include <windows.h>
-#endif
 
 // Include for Linux
 #if defined (__linux__) || defined(__APPLE__)
@@ -224,15 +198,6 @@ private:
 
 
 
-
-
-#if defined (_WIN32) || defined( _WIN64)
-    // Handle on serial device
-    HANDLE          hSerial;
-    // For setting serial port timeouts
-    COMMTIMEOUTS    timeouts;
-#endif
-
 };
 
 
@@ -255,14 +220,10 @@ public:
     unsigned long int   elapsedTime_ms();
 
 private:
-#if defined (NO_POSIX_TIME)
-    // Used to store the previous time (for computing timeout)
-    LONGLONG       counterFrequency;
-    LONGLONG       previousTime;
-#else
+
     // Used to store the previous time (for computing timeout)
     struct timeval      previousTime;
-#endif
+
 };
 
 #endif // serialib_H

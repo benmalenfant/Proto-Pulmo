@@ -13,6 +13,7 @@ include_directories(/usr/include/x86_64-linux-gnu/c++/9)
 include_directories(/usr/lib/gcc/x86_64-linux-gnu/9/include)
 include_directories(/usr/local/include)
 include_directories(/usr/local/include/oscpack)
+include_directories(/usr/local/include/oscpack)
 
 link_directories(/usr/local/lib)
 

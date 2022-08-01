@@ -18,7 +18,7 @@
 #define MESSAGE_MAX BUF_SIZE / 2
 
 #define PORT 5555
-char* host_addr = "10.0.2.2";
+static const char* host_addr = "10.0.2.2";
 
 /*------------------------------------------------------------------------------------*/
 
@@ -32,10 +32,7 @@ int sendosc(type t, void* val)
 	// setup udp socket
 	UdpTransmitSocket transmitSocket(IpEndpointName(host_addr, PORT));
 
-//	while(1)
-//	{
-//		usleep(5000);
-//		++i;
+
 
 		// setup packet
 		char buf[BUF_SIZE];
@@ -60,9 +57,15 @@ int sendosc(type t, void* val)
 			break;
 		case sine_:
 			strcat(path, "int");
-			p << osc::BeginMessage(path);
-			p << (int)(60*sin(((double)i/150))) + 60;
-			p << osc::EndMessage;
+			while(1)
+			{
+				p << osc::BeginMessage(path);
+				p << (int)(60*sin(((double)i/150))) + 60;
+				p << osc::EndMessage;
+				usleep(5000);
+				++i;
+			}
+
 			break;
 		}
 
