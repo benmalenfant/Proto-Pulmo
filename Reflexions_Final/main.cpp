@@ -1,10 +1,14 @@
-#include "sendosc.h"
-#include "slmx4_vcom.h"
-#include "Proto_Pulmo.h"
-#include "serialib.h"
 #include <stdio.h>
 
+#include "sendosc.h"
+#include "serialib.h"
+#include "slmx4_vcom.h"
+#include "Proto_Pulmo.h"
+
 #define RUN_TIME 10
+
+#define DEBUG
+
 
 #define FULL
 #ifdef FULL
@@ -28,10 +32,6 @@ while(run_time.elapsedTime_ms() < 1000 * RUN_TIME)
 	sensor.GetFrameNormalized();
 
 	sensor.End();
-
-
-
-	//bufferDestroy(myBuffer_ptr);
 
 	return 0;
 }
