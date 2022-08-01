@@ -1,5 +1,5 @@
 fs = 1000;
-fresp = 5;
+fresp = 15;
 frameSize = 50;
 zsize = 50;
 
@@ -26,12 +26,12 @@ t = 0:10/(zsize-1):10;
 subplot(3,1,1);
 h1 = plot( 1:frameSize, frameSize);
 subplot(3,1,2);
-%h = surf(xz,t,z);
+h = surf(xz,t,z);
 subplot(3,1,3);
 h2 = plot( 1:zsize, zsize);
-%axis([0 10,-.002 .002]);
+axis([0 10,-.01 .01]);
 
-gain = 0.1;
+gain = 0.000001;
 gain2 = 0.1;
 gain3 = 0.005;
 
@@ -57,7 +57,7 @@ while true
     %[b,a] = butter(10, [300 300]/(fs/2), 'bandpass');
 
     for i=1:zsize
-        yfilt(i) = (1+gain)/2*(z(1,i)-z(2,i)) + gain*yfilt(i);%highpass
+        yfilt(i) = (1-gain)*(z(1,i)-z(2,i)) + gain*yfilt(i);%highpass
         yfilt2(i) = (gain2)*(yfilt(i) - yfilt2(i)) + yfilt2(i); %lowpass
         %temp = (filter(b,a,z(:,i)));
         %yfilt(i) = temp(1);
@@ -91,12 +91,12 @@ while true
 
     xz(maxx)
  
-    set(h1, 'xdata', x, 'ydata', yfilt2);
-    set(h2, 'xdata', xz, 'ydata', resp);
+    set(h1, 'xdata', x, 'ydata', yfilt);
+    set(h2, 'xdata', xz, 'ydata', yfilt3);
 
 
 
-    %set(h, 'xdata', xz, 'ydata', t,'zdata',z);
+    set(h, 'xdata', xz, 'ydata', t,'zdata',z);
 
     drawnow;
     pause(1/fs);
