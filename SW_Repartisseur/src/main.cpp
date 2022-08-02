@@ -16,14 +16,20 @@ int main()
 	filter1_data.input[0] = 0;
 	filter1_data.type = HIGHPASS;
 
+	float outputarr[50];
+
 	filter_data_2d_t* filt2d_dat = init_2d_filter(50);
 
-	set2dFilterParam(LOWPASS, 0.1, filt2d_dat);
+	set2dFilterParam(HIGHPASS, 0.1, filt2d_dat);
 
 	for(int i = 0; i < 50; i++){
-		printf("%f,", test_data[i][39]);
-		float output = updateFilter(test_data[i][39], &filter1_data);
-		printf("%f\r\n", output);
+		update2dFilter(test_data[i], outputarr, filt2d_dat);
+		for(int j = 0; j < 50; j++){
+			printf("%f,",outputarr[j]);
+		}
+		/*printf("%f,", test_data[i][39]);
+		float output = updateFilter(test_data[i][39], &filter1_data);*/
+		printf("\r\n");
 	}
 	//float output = updateFilter(0.5, &filter1_data);
 
