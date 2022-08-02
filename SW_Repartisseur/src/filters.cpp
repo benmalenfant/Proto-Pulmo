@@ -22,3 +22,26 @@ float updateFilter(float input, filter_data_t* filter_data){
     }
     return(filter_data->output);
 }
+
+filter_data_2d_t* init_2d_filter(int size){
+    filter_data_2d_t* filter_data = (filter_data_2d_t*)malloc(sizeof(filter_data_2d_t));
+    filter_data->filter_array = (filter_data_t*)malloc(size*sizeof(filter_data_t));
+    filter_data->size = size;
+    return(filter_data);
+}
+
+int set2dFilterParam(int type, float gain, filter_data_2d_t* filter_data){
+    for(int i = 0; i < filter_data->size; i++){
+        filter_data->filter_array[i].output = 0;
+        filter_data->filter_array[i].type = type;
+        filter_data->filter_array[i].gain = gain;
+    }
+    return(1);
+}
+
+int update2dFilter(float* input, float* output, filter_data_2d_t* filter_data){
+    for(int i = 0; i < filter_data->size; i++){
+        //output[i] = updateFilter(input[i], filter_data->filter_array[i]);
+    }
+    return(1);
+}
