@@ -41,7 +41,7 @@ int set2dFilterParam(int type, float gain, filter_data_2d_t* filter_data){
 
 int update2dFilter(float* input, float* output, filter_data_2d_t* filter_data){
     for(int i = 0; i < filter_data->size; i++){
-        //output[i] = updateFilter(input[i], filter_data->filter_array[i]);
+        output[i] = updateFilter(input[i], &(filter_data->filter_array[i]));
     }
     return(1);
 }
