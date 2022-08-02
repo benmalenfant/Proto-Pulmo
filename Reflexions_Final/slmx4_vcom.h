@@ -8,56 +8,41 @@
 #include <stdlib.h>
 #include <string.h>
 #include <termios.h> // Contains POSIX terminal control definitions
-#include <unistd.h> // write(), read(), close()
+#include <unistd.h>  // write(), read(), close()
 #include <stdint.h>
 
 #include "serialib.h"
-#include "async_serial.h"
-#include "Proto_Pulmo.h"
 
-//#define SERIAL_PORT "/dev/ttyACM0"
+#define DEBUG
 
 #define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
+#define TIMEOUT_MS 1000
 
 class slmx4
 {
-
-public:
-	slmx4();
-
-	serialib serial_tx;
-	Serial serial_rx;
-
-	void Begin();
-	void End();
-	void GetFrameNormalized();
-	void GetFrameRaw();
-
+	serialib serial;
+	int status;
+	int numSamplers;
 	int isOpen;
 
+	void init_device();
+	void init_serial();
 	void OpenRadar();
 	void CloseRadar();
 
 	int check_ACK();
 
-#ifndef DEBUG
-private:
-#endif
-
+public:
+	slmx4();
 	enum cmds{rx_wait,frame_start,frame_end,ddc_en};
 
-	void init_device();
-	void init_serial();
+	void Begin();
+	void End();
+	void GetFrameNormalized();
+	void GetFrameRaw();
 	void updateNumberOfSamplers();
 	void Iterations();
-
 	void TryUpdateChip(int);
-
-	int status;
-	int numSamplers;
-
-
-
 };
 
 

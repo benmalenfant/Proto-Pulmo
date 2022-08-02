@@ -1,18 +1,18 @@
-// C library headers
+/*	Module slmx4_vcom :
+ *
+ * Auteur: Julian Davis
+ *
+ * Une traduction en C(++) du script matlab " vcom_xep_radar_connector.m "
+ *
+ * (github.com/SensorLogicInc/modules/blob/main/matlab/vcom_xep_radar_connector.m)
+ *
+ */
 
 #include "slmx4_vcom.h"
 #include "sendosc.h"
 
-
-
-
-
-#define BUFF_SIZE 32
-
-#define SLEEP_US 500
-
-#define DEBUG
-
+#define BUFFER_SIZE 32
+#define SLEEP_MS 500
 
 
 slmx4::slmx4()
@@ -24,22 +24,25 @@ slmx4::slmx4()
 
 void slmx4::Begin()
 {
+	timeOut timer;
+	timer.initTimer();
+
 	init_serial();
-
-	init_device();
-
 	OpenRadar();
-	//CloseRadar();
 
-	while(!isOpen);
+	while(!isOpen)
+	{
+		if(timer.elapsedTime_ms() > TIMEOUT_MS)
+		{
+			fprintf(stderr,"Timeout: OpenRadar()");
+		}
+	};
 
-
-	//cout << "bins = " << numSamplers << endl;
 }
 
 void slmx4::init_device()
 {
-	serial_tx.writeString("NVA_CreateHandle()");
+	serial.writeString("NVA_CreateHandle()");
 
 #ifdef DEBUG
     if(!check_ACK()) { printf("SUCCESS: ACK from 'init_device'\n");
@@ -52,13 +55,16 @@ void slmx4::init_device()
 
 int slmx4::check_ACK()
 {
-	char buffer[BUFF_SIZE];
+	char buffer[BUFFER_SIZE];
+	char ack_[6];
 
 	//printf("Avail: %i\n", serial_rx.Available());
 
-	serial_tx.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
+	serial.readString(buffer, '0', BUFFER_SIZE, SLEEP_MS);
 
-	if(!strcmp(buffer, "<ACK>")) { return 0; }
+	memcpy(ack_, buffer, 5);
+
+	if(!strcmp(ack_, "<ACK>")) { return 0; }
 	else
 	{
 		//TODO stderr <<
@@ -70,7 +76,7 @@ int slmx4::check_ACK()
 
 void slmx4::OpenRadar()
 {
-	serial_tx.writeString("OpenRadar(X4)");
+	serial.writeString("OpenRadar(X4)");
 
 #ifdef DEBUG
     if(!check_ACK()) { printf("SUCCESS: ACK from 'OpenRadar'\n");
@@ -86,8 +92,8 @@ void slmx4::OpenRadar()
 
 void slmx4::CloseRadar()
 {
-	serial_tx.writeString("Close()");
-	serial_rx.Disconnect();
+	serial.writeString("Close()");
+
 
 #ifdef DEBUG
     if(!check_ACK()) { printf("SUCCESS: ACK from 'CloseRadar'\n");
@@ -95,16 +101,21 @@ void slmx4::CloseRadar()
     else { printf("ERROR: Reading ACK in 'CloseRadar'\n");
     sendosc(string_, (void*)"ERROR: Reading ACK in 'CloseRadar'\n");}
 #endif
+
 }
 
 
 void slmx4::updateNumberOfSamplers()
 {
-	char buffer[BUFF_SIZE];
+	char buffer[BUFFER_SIZE];
 
-	serial_tx.writeString("VarGetValue_ByName(SamplersPerFrame)");
+	serial.writeString("VarGetValue_ByName(SamplersPerFrame)");
 
-	serial_tx.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
+	usleep(10);
+
+	serial.readString(buffer, '0', BUFFER_SIZE, SLEEP_MS);
+
+	//printf("%s\n", buffer);
 
 	char* token = strtok(buffer, "<");
 	numSamplers = atoi(token);
@@ -113,17 +124,17 @@ void slmx4::updateNumberOfSamplers()
 	char text[32];
 	sprintf(text, "Samplers: %i\n", numSamplers);
 	printf("%s",text);
-	sendosc(string_, (void*)text);
+	//sendosc(string_, (void*)text);
 #endif
 }
 
 void slmx4::Iterations()
 {
-	char buffer[BUFF_SIZE];
+	char buffer[BUFFER_SIZE];
 
-	serial_tx.writeString("VarGetValue_ByName(Iterations)");
+	serial.writeString("VarGetValue_ByName(Iterations)");
 
-	serial_tx.readString(buffer, '0', BUFF_SIZE, SLEEP_US);
+	serial.readString(buffer, '0', BUFFER_SIZE, SLEEP_MS);
 
 	char* token = strtok(buffer, "<");
 	int iterations = atoi(token);
@@ -139,16 +150,16 @@ void slmx4::TryUpdateChip(int cmd)
 	switch(cmd)
 	{
 	case rx_wait:
-		serial_tx.writeString("VarSetValue_ByName(rx_wait,0)");
+		serial.writeString("VarSetValue_ByName(rx_wait,0)");
 		break;
 	case frame_start:
-		serial_tx.writeString("VarSetValue_ByName(frame_start,0)");
+		serial.writeString("VarSetValue_ByName(frame_start,0)");
 		break;
 	case frame_end:
-		serial_tx.writeString("VarSetValue_ByName(frame_end,4.0)");
+		serial.writeString("VarSetValue_ByName(frame_end,4)");
 		break;
 	case ddc_en:
-			serial_tx.writeString("VarSetValue_ByName(ddc_en,1)");
+		serial.writeString("VarSetValue_ByName(ddc_en,1)");
 		break;
 	}
 
@@ -165,9 +176,11 @@ void slmx4::TryUpdateChip(int cmd)
 
 void slmx4::init_serial()
 {
-	// Connection to serial_tx port
-	char errorOpening = serial_tx.openDevice(SERIAL_PORT, 115200);
-	//serial_rx.Connect(SERIAL_PORT, 115200);
+	// Connection to serial port
+	char errorOpening = serial.openDevice(SERIAL_PORT, 115200);
+
+	// Share buffer ptr to serial module
+	//serial.set_buffer_ptr(buf_ptr);
 
     // If connection fails, return the error code otherwise, display a success message
     if (errorOpening != 1)
@@ -180,62 +193,66 @@ void slmx4::init_serial()
     {
     	printf ("Successful connection to %s\n",SERIAL_PORT);
     	sendosc(string_, (void*)"Successful connection to serial port");
-    	serial_tx.setDTR();
-    	serial_tx.setRTS();
+    	serial.setDTR();
+    	serial.setRTS();
     }
 }
 
-void slmx4::GetFrameRaw()
+
+void slmx4::GetFrameRaw()//WIP
 {
 	static int frameSize = (numSamplers * 8) + 5;
+	int av = 0;
+	timeOut timer;
 
-	//int i = frameSize;
-	char* buffer = (char*)malloc(frameSize+32);
+	serial.writeString("GetFrameRaw()");
+	
+	timer.initTimer();
 
-	serial_tx.writeString("GetFrameRaw()");
-
-
-	//while(--i)//buffer != '<')
-	//	{
-			serial_tx.readBytes(&buffer, frameSize, 1, 10);
-			//if(++i > frameSize)
-			//	printf("Frame size error");
-	//		if(!(i%30))
-	//			printf("\n");
-	//		else
-	//			printf("%i ", buffer);
-	//	}
-
-	for(int i = 0; i < 100; ++i)
-		printf("%i ", buffer[i]);
-
-	free(buffer);
-
+	while(1)
+	{
+		av = serial.available();
+		if(av)
+			printf("Avail: %i\n", av);
+		
+		if(timer.elapsedTime_ms() > TIMEOUT_MS)
+		{
+			printf("TIMEOUT:(\n");
+			break;
+		}
+	
+	};
 }
 
 void slmx4::GetFrameNormalized()
 {
-	//int frameSize = (numSamplers * 4 + 5);
-	//int frameSize = 11;
+	int frameSize = (numSamplers * 8 + 5);
+	char frame[frameSize] = {0};
+	int av = 0;
+	
+	serial.writeString("GetFrameNormalized()");
+	
+	timeOut timer;
+	timer.initTimer();
 
-	//char frame[frameSize];
-	int i = 10;
-
-	printf("\n\nok\n");
-
-	char buffer;//= 'P';
-
-	while(--i)//buffer != '<')
+	while(1)
 	{
-		serial_tx.readBytes(&buffer, 1, 1, SLEEP_US);
-		//if(++i > frameSize)
-		//	printf("Frame size error");
-		printf("%i . ", buffer);
+		av = serial.available();
+		if(timer.elapsedTime_ms() > TIMEOUT_MS)
+		{
+			printf("Timeout\n");
+			break;
+		}
+		if(av == frameSize)
+		{
+			serial.readBytes(&frame, frameSize, 0);
+			break;
+		}
 	}
 
 #ifdef DEBUG
-//	for(int j = 0; j < frameSize; ++j)
-//		printf("%c ", frame[j]);
+	for(int j = 0; j < frameSize; ++j)
+		printf("%i ", frame[j]);
 #endif
 
 }
