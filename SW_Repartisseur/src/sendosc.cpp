@@ -15,14 +15,15 @@
 /*------------------------------------------------------------------------------------*/
 
 #define BUF_SIZE 1024
+#define MESSAGE_MAX BUF_SIZE / 2
 
-#define PORT 5557
-char* host_addr = "10.0.2.2";
+#define PORT 5555
+static const char* host_addr = "10.0.2.2";
 
 /*------------------------------------------------------------------------------------*/
 
 
-int sendosc()
+int sendosc(type t, void* val)
 {
 	using namespace osc;
 
@@ -31,23 +32,46 @@ int sendosc()
 	// setup udp socket
 	UdpTransmitSocket transmitSocket(IpEndpointName(host_addr, PORT));
 
-	while(1)
-	{
-		usleep(5000);
-		++i;
+
 
 		// setup packet
 		char buf[BUF_SIZE];
 		memset(buf, 0, BUF_SIZE);
 		osc::OutboundPacketStream p(buf, BUF_SIZE);
 
-		char *path = "int";
-		p << osc::BeginMessage(path);
-		p << (int)(60*sin(((double)i/150))) + 60;
-		p << osc::EndMessage;
+		char path[MESSAGE_MAX] = {};
+
+
+		switch(t)
+		{
+		case int_:
+			strcat(path, "int");
+			p << osc::BeginMessage(path);
+			p << *((int*)val);
+			p << osc::EndMessage;
+			break;
+		case string_:
+			strcat(path, (const char*)val);
+			p << osc::BeginMessage(path);
+			p << osc::EndMessage;
+			break;
+		case sine_:
+			strcat(path, "int");
+			while(1)
+			{
+				p << osc::BeginMessage(path);
+				p << (int)(60*sin(((double)i/150))) + 60;
+				p << osc::EndMessage;
+				usleep(5000);
+				++i;
+			}
+
+			break;
+		}
+
 
 		transmitSocket.Send( p.Data(), p.Size() );
-	}
+//	}
 
 	//bundle?
 
