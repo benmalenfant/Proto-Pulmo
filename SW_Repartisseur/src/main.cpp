@@ -54,12 +54,16 @@ int main()
 	sensor.TryUpdateChip(slmx4::ddc_en);
 	sensor.TryUpdateChip(slmx4::PPS);
 
-	printf("Samples %d\n", sensor.numSamplers);
 
 	_Float32* tablo = (_Float32*)malloc(sizeof(_Float32)*sensor.numSamplers);
 
 	sensor.GetFrameNormalized(tablo);
 
+	for(int i = 0; i < sensor.numSamplers-1; i++){
+		printf("%f,",tablo[i]);
+	}
+
+	printf("%f",tablo[sensor.numSamplers-1]);
 
 	sensor.End();
 
