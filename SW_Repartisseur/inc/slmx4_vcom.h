@@ -13,7 +13,7 @@
 
 #include "serialib.h"
 
-#define DEBUG
+//#define DEBUG
 
 #define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
 #define TIMEOUT_MS 1000
@@ -34,7 +34,7 @@ class slmx4
 
 public:
 	slmx4();
-	enum cmds{rx_wait,frame_start,frame_end,ddc_en};
+	enum cmds{rx_wait,frame_start,frame_end,ddc_en, PPS};
 
 	void Begin();
 	void End();
