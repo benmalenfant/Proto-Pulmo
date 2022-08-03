@@ -9,7 +9,6 @@ typedef  struct{
     filter_data_t* filter3_data;
     int array_size;
     float* resp_buffer;
-
 }respiration_data_t;
 
 //Master Function, calls other functions inside the loop
@@ -22,9 +21,11 @@ int respiration_format(float *in_array, float *out_array, int array_size);
 
 int respiration_update_respiration(float *sensor_array, int sensor_array_size, float *breath_array, int breath_array_size);
 
-int respiration_get_mouvement(float *breath_array);
+//Indicator to see if there's movement
+int respiration_get_mouvement(float *breath_array, int num_value);
 
-int respiration_get_presence(float *breath_array);
+//Indicator to see if there's presence (default, num_value = 50)
+int respiration_get_presence(float *breath_array, int num_value);
 
 
 #endif
