@@ -5,9 +5,11 @@ Ce repo github contient le code du projet de l'équipe Proto-Pulmo dans le cadre
 Le code est conçu pour être interfacer le capteur SLMX4 de SensorLogic sur une machine linux, détecter la respiration à partir des données du capteur et envoyer ces données vers le logiciel musical MaxMSP.
 
 Documentation module capteur de SensorLogic:
+
 https://github.com/SensorLogicInc/modules
 
 Documentation plus poussée sur le circuit intégré du capteur
+
 https://github.com/novelda/Legacy-Documentation
 
  
