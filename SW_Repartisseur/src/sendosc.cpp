@@ -1,7 +1,7 @@
 #include <iostream>
 
-#include </usr/include/oscpack/osc/OscOutboundPacketStream.h>
-#include </usr/include/oscpack/ip/UdpSocket.h>
+#include <OscOutboundPacketStream.h>
+#include <UdpSocket.h>
 
 #include "sendosc.h"
 
