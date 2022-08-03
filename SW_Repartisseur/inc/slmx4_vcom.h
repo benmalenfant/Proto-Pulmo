@@ -13,17 +13,14 @@
 
 #include "serialib.h"
 
-//#define DEBUG
+#define DEBUG
 
 #define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
-#define TIMEOUT_MS 1000
+#define TIMEOUT_MS 100
 
 class slmx4
 {
 	serialib serial;
-	int status;
-	int numSamplers;
-	int isOpen;
 
 	void init_device();
 	void init_serial();
@@ -33,15 +30,19 @@ class slmx4
 	int check_ACK();
 
 public:
+	int status;
+	int numSamplers;
+	int isOpen;
+
 	slmx4();
 	enum cmds{rx_wait,frame_start,frame_end,ddc_en, PPS};
 
 	void Begin();
 	void End();
-	void GetFrameNormalized();
-	void GetFrameRaw();
+	int  GetFrameNormalized(_Float32* frame);
+	int  GetFrameRaw(_Float32* frame);
 	void updateNumberOfSamplers();
-	void Iterations();
+	int  Iterations();
 	void TryUpdateChip(int);
 };
 

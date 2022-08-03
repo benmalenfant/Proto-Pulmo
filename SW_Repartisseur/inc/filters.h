@@ -24,6 +24,8 @@ float updateFilter(float input, filter_data_t* filter_data);
 
 filter_data_2d_t* init_2d_filter(int size);
 
+int destroy_2d_filter(filter_data_2d_t* filter_data);
+
 int set2dFilterParam(int type, float gain, filter_data_2d_t* filter_data);
 
 int update2dFilter(float* input, float* output, filter_data_2d_t* filter_data);

@@ -1,3 +1,6 @@
+#include <stdio.h> 
+#include <stdlib.h> 
+
 #include "sendosc.h"
 #include "slmx4_vcom.h"
 #include "Proto_Pulmo.h"
@@ -9,6 +12,7 @@
 
 int main()
 {
+	/*
 	filter_data_t filter1_data;
 
 	filter1_data.gain = 0.1;
@@ -27,13 +31,13 @@ int main()
 		for(int j = 0; j < 50; j++){
 			printf("%f,",outputarr[j]);
 		}
-		/*printf("%f,", test_data[i][39]);
-		float output = updateFilter(test_data[i][39], &filter1_data);*/
+		printf("%f,", test_data[i][39]);
+		float output = updateFilter(test_data[i][39], &filter1_data);
 		printf("\r\n");
 	}
 	//float output = updateFilter(0.5, &filter1_data);
-
-	/*
+	*/
+	
 
 	slmx4 sensor;
 	//sensor.init_serial();
@@ -48,17 +52,18 @@ int main()
 	sensor.TryUpdateChip(slmx4::frame_start);
 	sensor.TryUpdateChip(slmx4::frame_end);
 	sensor.TryUpdateChip(slmx4::ddc_en);
+	sensor.TryUpdateChip(slmx4::PPS);
 
-	sensor.GetFrameRaw();
+	printf("Samples %d\n", sensor.numSamplers);
 
+	_Float32* tablo = (_Float32*)malloc(sizeof(_Float32)*sensor.numSamplers);
 
-	//sensor.GetFrameNormalized();
+	sensor.GetFrameNormalized(tablo);
 
-	//sendosc();	//Test sine
 
 	sensor.End();
 
-*/
+
 	return 0;
 }
 

@@ -12,7 +12,7 @@
 #include "sendosc.h"
 
 #define BUFFER_SIZE 32
-#define SLEEP_MS 100
+#define ACK_SIZE 6
 
 
 slmx4::slmx4()
@@ -62,19 +62,17 @@ void slmx4::init_device()
 int slmx4::check_ACK()
 {
 	char buffer[BUFFER_SIZE];
-	char ack_[6];
+	char ack_[ACK_SIZE];
 
-	//printf("Avail: %i\n", serial_rx.Available());
+	serial.readString(buffer, '0', ACK_SIZE, TIMEOUT_MS);
 
-	serial.readString(buffer, '0', BUFFER_SIZE, SLEEP_MS);
+	memcpy(ack_, buffer, ACK_SIZE);
 
-	memcpy(ack_, buffer, 6);
-
-	if(!strcmp(ack_, "<ACK>")) { return 0; }
-	else
-	{
-		//TODO stderr <<
-		return -1;
+	if(!strcmp(ack_, "<ACK>")){ 
+		return EXIT_SUCCESS; 
+	}
+	else{
+		return EXIT_FAILURE;
 	}
 
 }
@@ -130,7 +128,7 @@ void slmx4::updateNumberOfSamplers()
 
 	usleep(10);
 
-	serial.readString(buffer, '0', BUFFER_SIZE, SLEEP_MS);
+	serial.readString(buffer, '0', BUFFER_SIZE, TIMEOUT_MS);
 
 	//printf("%s\n", buffer);
 
@@ -145,13 +143,13 @@ void slmx4::updateNumberOfSamplers()
 #endif
 }
 
-void slmx4::Iterations()
+int slmx4::Iterations()
 {
 	char buffer[BUFFER_SIZE];
 
 	serial.writeString("VarGetValue_ByName(Iterations)");
 
-	serial.readString(buffer, '0', BUFFER_SIZE, SLEEP_MS);
+	serial.readString(buffer, '0', BUFFER_SIZE, TIMEOUT_MS);
 
 	char* token = strtok(buffer, "<");
 	int iterations = atoi(token);
@@ -159,6 +157,7 @@ void slmx4::Iterations()
 #ifdef DEBUG
 	printf("Iterations: %i\n", iterations);
 #endif
+	return(iterations);
 }
 
 void slmx4::TryUpdateChip(int cmd)
@@ -227,10 +226,9 @@ void slmx4::init_serial()
 }
 
 
-void slmx4::GetFrameRaw()//WIP
+int slmx4::GetFrameRaw(_Float32* frame)
 {
 	int frameSize = (numSamplers);
-	_Float32 frame[frameSize];
 	int av = 0;
 	
 	serial.writeString("GetFrameRaw()");
@@ -248,23 +246,26 @@ void slmx4::GetFrameRaw()//WIP
 		}
 		if(av >= frameSize*4)
 		{
-			serial.readBytes(&frame, frameSize * 4, 0);
+			serial.readBytes(frame, frameSize * 4, 0);
 			break;
 		}
 	}
 
-
+	#ifdef DEBUG
 	for(int j = 0; j < frameSize -1; ++j)
 		printf("%f, ", frame[j]);
+	#endif
 
 
 	if(!check_ACK()){
+		return(EXIT_SUCCESS);
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'getFrameRaw'\n");
 		sendosc(string_, (void*)"SUCCESS: ACK from 'getFrameRaw'");
 		#endif
 	}
  	else{ 
+		return(EXIT_FAILURE);
 		#ifdef DEBUG
 		printf("ERROR: Reading ACK in 'getFrameRaw'\n");
 		sendosc(string_, (void*)"ERROR: Reading ACK in 'getFrameRaw'\n");
@@ -272,10 +273,9 @@ void slmx4::GetFrameRaw()//WIP
 	}
 }
 
-void slmx4::GetFrameNormalized()
+int slmx4::GetFrameNormalized(_Float32* frame)
 {
 	int frameSize = (numSamplers);
-	_Float32 frame[frameSize];
 	int av = 0;
 	
 	serial.writeString("GetFrameNormalized()");
@@ -293,23 +293,25 @@ void slmx4::GetFrameNormalized()
 		}
 		if(av >= frameSize*4)
 		{
-			serial.readBytes(&frame, frameSize * 4, 0);
+			serial.readBytes(frame, frameSize * 4, 0);
 			break;
 		}
 	}
 
-
+	#ifdef DEBUG
 	for(int j = 0; j < frameSize -1; ++j)
 		printf("%f, ", frame[j]);
-
+	#endif
 
 	if(!check_ACK()){
+		return(EXIT_SUCCESS);
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'getframenormalized'\n");
 		sendosc(string_, (void*)"SUCCESS: ACK from 'getframenormalized'");
 		#endif
 	}
  	else{ 
+		return(EXIT_FAILURE);
 		#ifdef DEBUG
 		printf("ERROR: Reading ACK in 'getframenormalized'\n");
 		sendosc(string_, (void*)"ERROR: Reading ACK in 'getframenormalized'\n");

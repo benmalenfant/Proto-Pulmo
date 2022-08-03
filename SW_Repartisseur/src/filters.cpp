@@ -30,6 +30,17 @@ filter_data_2d_t* init_2d_filter(int size){
     return(filter_data);
 }
 
+int destroy_2d_filter(filter_data_2d_t* filter_data){
+    if(filter_data != NULL){
+        free(filter_data->filter_array);
+        free(filter_data);
+        return(EXIT_SUCCESS);
+    }
+    else{
+        return(EXIT_FAILURE);
+    }
+}
+
 int set2dFilterParam(int type, float gain, filter_data_2d_t* filter_data){
     for(int i = 0; i < filter_data->size; i++){
         filter_data->filter_array[i].output = 0;

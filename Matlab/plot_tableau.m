@@ -1,6 +1,4 @@
 %data = readtable('FILE');
-data = csvread('FILE');
-hold off
-plot(data(:,1))
-hold on
-plot(data(:,2))
+data = csvread('../SW_Repartisseur/FILE');
+
+plot(abs(data(:)-255))
