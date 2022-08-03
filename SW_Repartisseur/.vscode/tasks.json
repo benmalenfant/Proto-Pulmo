@@ -8,7 +8,7 @@
 
             ],
             "options": {
-                "cwd": "${workspaceFolder}/SW_Repartisseur"
+                "cwd": "${workspaceFolder}"
             },
             "problemMatcher": [
                 "$gcc"

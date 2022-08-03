@@ -5,7 +5,7 @@
             "name": "C/C++: g++ build and debug active file",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/SW_Repartisseur/bin/sw_repartisseur",
+            "program": "${workspaceFolder}/bin/sw_repartisseur",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${fileDirname}",
