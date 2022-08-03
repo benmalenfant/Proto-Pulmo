@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1)
 
-project(versionOne)
+project(sw_repartisseur)
 set (CMAKE_CXX_STANDARD 11)
 
 SET(EXECUTABLE_OUTPUT_PATH ./bin)
@@ -23,8 +23,8 @@ set(CMAKE_C_FLAGS "-g -Wall")
 
 include_directories(./inc)
 
-add_executable(versionOne src/main.cpp src/sendosc.cpp src/slmx4_vcom.cpp src/serialib.cpp)
-target_link_libraries(versionOne oscpack ${LIBS})
+add_executable(sw_repartisseur src/main.cpp src/filters.cpp src/sendosc.cpp src/slmx4_vcom.cpp src/serialib.cpp)
+target_link_libraries(sw_repartisseur oscpack ${LIBS})
 
-INSTALL(TARGETS versionOne RUNTIME DESTINATION bin)
+INSTALL(TARGETS sw_repartisseur RUNTIME DESTINATION bin)
 
