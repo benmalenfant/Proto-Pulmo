@@ -8,7 +8,7 @@ clear;
 clc;
 
 %Communication avec le port USB contenant le capteur
-r = vcom_xep_radar_connector('COM3'); % adjust for *your* COM port!
+r = vcom_xep_radar_connector('COM9'); % adjust for *your* COM port!
 r.Open('X4');
 
 % As a side-effect many settings on write will cause the numSamplers
@@ -24,7 +24,7 @@ r.TryUpdateChip('rx_wait', 0);
 r.TryUpdateChip('frame_start', 0.3);
 r.TryUpdateChip('frame_end', 4.0);
 %r.TryUpdateChip('ddc_en', 1);
-r.TryUpdateChip('PPS', 100);
+r.TryUpdateChip('PPS', 10);
 
 % Set up time plot signal
 frameSize = r.numSamplers;   % Get # bins/samplers in a frame
@@ -56,6 +56,7 @@ axis([0,623,-10 10])
 title('radar time waveform');
 xlabel('bin');
 ylabel('amplitude');
+xl  = xline(100);
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 subplot(4,1,2)
 h2 = plot( 1:frameSize, frame);
@@ -85,9 +86,9 @@ ylabel('amplitude');
 gain1 = 0.8; %HighPass Gain
 gain2 = 0.02; %LowPass Gain
 gain3 = 0.03; %LowPass Abs Gain for position detection
-gain4 = 0.001; %LowPass for maxx
+gain4 = 0.008; %LowPass for maxx
 
-gain_perturb = 0.001; %Gain pour le passe-bas suite à perturbation
+gain_perturb = 0.1; %Gain pour le passe-bas suite à perturbation
 
 %Initialisation des variables
 statut = 0;
@@ -161,7 +162,6 @@ while isgraphics(h_fig)
                 
                 %maxx_prev=0;
                 %Appliquer un filtre passe-bas à partir de la valeur trouvée
-                maxx_prev = (gain_perturb)*(maxx - maxx_prev) + maxx_prev; %lowpass 
                 
             elseif(compteur==0)
                 statut=0;
@@ -169,13 +169,13 @@ while isgraphics(h_fig)
                 %Si stabiliser, retourner avec le gain précédent
                 
                 %Appliquer un filtre passe-bas à partir de la valeur trouvée
-                maxx_prev = (gain4)*(maxx - maxx_prev) + maxx_prev; %lowpass
+                 %lowpass
             end
 
         elseif(statut==0)
             mobilite = 0;
         end
-        
+        maxx_prev = (gain4)*(maxx - maxx_prev) + maxx_prev;
         %Conversion de maxx_int en integer 8
         maxx_int = int8(maxx_prev);
         count = count+1;
@@ -205,7 +205,8 @@ while isgraphics(h_fig)
         
         %disp(resp(1,1));
         %disp(mobilite);
-        disp(presence);
+        %disp(presence);
+        fprintf('avant : %i ; apres : %i \r\n',maxx,maxx_prev)
 
         %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 
@@ -214,6 +215,8 @@ while isgraphics(h_fig)
         set(h2, 'xdata', 1:frameSize, 'ydata', filtFrame(2,:));
         set(h3, 'xdata', 1:frameSize, 'ydata', filtFrame(3,:));
         set(h4, 'xdata', 1:resp_size, 'ydata', resp_out);
+
+        xl.Value = maxx_int;
         
         %Aller chercher le MAX des valeurs pour ensuite l'afficher dans le
         %display:
