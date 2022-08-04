@@ -24,7 +24,7 @@ set(CMAKE_C_FLAGS "-g -Wall")
 
 include_directories(./inc)
 
-add_executable(sw_repartisseur src/main.cpp src/filters.cpp src/sendosc.cpp src/slmx4_vcom.cpp src/serialib.cpp)
+add_executable(sw_repartisseur src/main.cpp src/filters.cpp src/sendosc.cpp src/slmx4_vcom.cpp src/serialib.cpp src/respiration.cpp)
 target_link_libraries(sw_repartisseur oscpack ${LIBS})
 
 INSTALL(TARGETS sw_repartisseur RUNTIME DESTINATION bin)

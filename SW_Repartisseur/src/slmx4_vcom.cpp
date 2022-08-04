@@ -61,12 +61,11 @@ void slmx4::init_device()
 
 int slmx4::check_ACK()
 {
-	char buffer[BUFFER_SIZE];
 	char ack_[ACK_SIZE];
+	
+	serial.readBytes(ack_, ACK_SIZE-1, 0);
 
-	serial.readString(buffer, '0', ACK_SIZE, TIMEOUT_MS);
-
-	memcpy(ack_, buffer, ACK_SIZE);
+	ack_[5] = 0;
 
 	if(!strcmp(ack_, "<ACK>")){ 
 		return EXIT_SUCCESS; 
@@ -169,7 +168,7 @@ void slmx4::TryUpdateChip(int cmd)
 		serial.writeString("VarSetValue_ByName(rx_wait,0)");
 		break;
 	case frame_start:
-		serial.writeString("VarSetValue_ByName(frame_start,0)");
+		serial.writeString("VarSetValue_ByName(frame_start,0.2)");
 		break;
 	case frame_end:
 		serial.writeString("VarSetValue_ByName(frame_end,4)");
@@ -246,7 +245,7 @@ int slmx4::GetFrameRaw(_Float32* frame)
 		}
 		if(av >= frameSize*4)
 		{
-			serial.readBytes(frame, frameSize * 4, 0);
+			serial.readBytes(frame, frameSize * 4, 1);
 			break;
 		}
 	}

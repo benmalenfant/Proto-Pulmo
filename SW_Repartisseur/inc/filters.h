@@ -22,7 +22,10 @@ typedef  struct{
 
 float updateFilter(float input, filter_data_t* filter_data);
 
+filter_data_t* init_filter(int type, float gain);
+
 filter_data_2d_t* init_2d_filter(int size);
+filter_data_2d_t* init_2d_filter(int size,int type, float gain);
 
 int destroy_2d_filter(filter_data_2d_t* filter_data);
 
