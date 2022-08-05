@@ -34,7 +34,7 @@ public:
 	int isOpen;
 
 	slmx4();
-	enum cmds{rx_wait,frame_start,frame_end,ddc_en, PPS};
+	enum cmds{rx_wait,frame_start,frame_end,ddc_en, pps};
 
 	void Begin();
 	void End();

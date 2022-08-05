@@ -21,6 +21,12 @@
 #define PERIOD 5
 
 void *osc_listener(void* vargp);
+void UpdateSensorReg(int reg, float val);
+#define RX_WAIT 1
+#define FRAME_START 2
+#define FRAME_END 3
+#define DDC_EN 4
+#define PPS 5
 
 static char host_addr[32] = {0};
 static volatile unsigned char go = 0;
@@ -66,11 +72,12 @@ int main()
 	sensor.Iterations();
 
 
-	sensor.TryUpdateChip(slmx4::rx_wait, &rx_wait_arg);
-	sensor.TryUpdateChip(slmx4::frame_start, &frame_start_arg);
-	sensor.TryUpdateChip(slmx4::frame_end, &frame_end_arg);
-	sensor.TryUpdateChip(slmx4::ddc_en, &ddc_en_arg);
-	sensor.TryUpdateChip(slmx4::PPS, &PPS_arg);
+	UpdateSensorReg(sensor, RX_WAIT, 0);
+	UpdateSensorReg(sensor, FRAME_START, 0.2);
+	UpdateSensorReg(sensor, FRAME_END, 4);
+	UpdateSensorReg(sensor, DDC_EN, 1);
+	UpdateSensorReg(sensor, PPS, 10);
+
 
 	respiration_data_t* resp_data = respiration_init(sensor.numSamplers, BREATH_SIZE);
 
@@ -113,6 +120,32 @@ int main()
 	return 0;
 }
 
+void UpdateSensorReg(slmx4* sensor, int reg, float val)
+{
+	switch (reg)
+	{
+	case RX_WAIT:
+		static unsigned char rx_wait_arg = val;
+		sensor->TryUpdateChip(slmx4::rx_wait, &rx_wait_arg);
+		break;
+	case FRAME_START:
+		static float frame_start_arg = val;
+		sensor->TryUpdateChip(slmx4::frame_start, &frame_start_arg);
+		break;
+	case FRAME_END:
+		static float frame_end_arg = val;
+		sensor->TryUpdateChip(slmx4::frame_end, &frame_end_arg);
+		break;
+	case DDC_EN:
+		static unsigned char ddc_en_arg = val;
+		sensor->TryUpdateChip(slmx4::ddc_en, &ddc_en_arg);
+		break;
+	case PPS:
+		static unsigned int PPS_arg = val;
+		sensor->TryUpdateChip(slmx4::pps, &PPS_arg);
+		break;
+	}
+}
 
 
 /**
