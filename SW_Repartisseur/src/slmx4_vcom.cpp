@@ -10,6 +10,7 @@
 
 #include "slmx4_vcom.h"
 #include "sendosc.h"
+#include <string.h>
 
 #define BUFFER_SIZE 32
 #define ACK_SIZE 6
@@ -159,25 +160,44 @@ int slmx4::Iterations()
 	return(iterations);
 }
 
-void slmx4::TryUpdateChip(int cmd)
+void slmx4::TryUpdateChip(int cmd, void* val)
 {
+
+	char _valstr[32];
+	char _cmd[32];
 
 	switch(cmd)
 	{
 	case rx_wait:
-		serial.writeString("VarSetValue_ByName(rx_wait,0)");
+		sprintf(_valstr, "%i)", *(unsigned char*)val);
+		memcpy(_cmd, "VarSetValue_ByName(rx_wait,", sizeof("VarSetValue_ByName(rx_wait,"));
+		strcat(_cmd, _valstr);
+		serial.writeString(_cmd);
 		break;
+
 	case frame_start:
-		serial.writeString("VarSetValue_ByName(frame_start,0.2)");
+		sprintf(_valstr, "%.2f)", *(float*)val);
+		memcpy(_cmd, "VarSetValue_ByName(frame_start,", sizeof("VarSetValue_ByName(frame_start,"));
+		strcat(_cmd, _valstr);
+		serial.writeString(_cmd);
 		break;
 	case frame_end:
-		serial.writeString("VarSetValue_ByName(frame_end,4)");
+		sprintf(_valstr, "%.2f)", *(float*)val);
+		memcpy(_cmd, "VarSetValue_ByName(frame_end,", sizeof("VarSetValue_ByName(frame_end,"));
+		strcat(_cmd, _valstr);
+		serial.writeString(_cmd);
 		break;
 	case ddc_en:
-		serial.writeString("VarSetValue_ByName(ddc_en,0)");
+		sprintf(_valstr, "%i)", *(unsigned char*)val);
+		memcpy(_cmd, "VarSetValue_ByName(ddc_en,", sizeof("VarSetValue_ByName(ddc_en,"));
+		strcat(_cmd, _valstr);
+		serial.writeString(_cmd);
 		break;
 	case PPS:
-		serial.writeString("VarSetValue_ByName(PPS,10)");
+		sprintf(_valstr, "%i)", *(int*)val);
+		memcpy(_cmd, "VarSetValue_ByName(PPS,", sizeof("VarSetValue_ByName(PPS,"));
+		strcat(_cmd, _valstr);
+		serial.writeString(_cmd);
 		break;
 	}
 

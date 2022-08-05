@@ -1,0 +1,1 @@
+/usr/bin/c++  -g -Wall  -rdynamic CMakeFiles/versionOne.dir/main.cpp.o CMakeFiles/versionOne.dir/sendosc.cpp.o CMakeFiles/versionOne.dir/slmx4_vcom.cpp.o CMakeFiles/versionOne.dir/serialib.cpp.o  -o versionOne   -L/usr/local/lib  -Wl,-rpath,/usr/local/lib: -loscpack -loscpack -lpthread 

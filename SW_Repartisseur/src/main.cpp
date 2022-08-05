@@ -13,6 +13,12 @@
 
 #define PERIOD 5
 
+static unsigned char rx_wait_arg = 0;
+static float frame_start_arg = 0.2;
+static float frame_end_arg = 4;
+static unsigned char ddc_en_arg = 1;
+static unsigned int PPS_arg = 10;
+
 int main()
 {
 	slmx4 sensor;
@@ -20,11 +26,12 @@ int main()
 	sensor.Begin();
 	sensor.Iterations();
 
-	sensor.TryUpdateChip(slmx4::rx_wait);
-	sensor.TryUpdateChip(slmx4::frame_start);
-	sensor.TryUpdateChip(slmx4::frame_end);
-	sensor.TryUpdateChip(slmx4::ddc_en);
-	sensor.TryUpdateChip(slmx4::PPS);
+
+	sensor.TryUpdateChip(slmx4::rx_wait, &rx_wait_arg);
+	sensor.TryUpdateChip(slmx4::frame_start, &frame_start_arg);
+	sensor.TryUpdateChip(slmx4::frame_end, &frame_end_arg);
+	sensor.TryUpdateChip(slmx4::ddc_en, &ddc_en_arg);
+	sensor.TryUpdateChip(slmx4::PPS, &PPS_arg);
 
 	respiration_data_t* resp_data = respiration_init(sensor.numSamplers, BREATH_SIZE);
 

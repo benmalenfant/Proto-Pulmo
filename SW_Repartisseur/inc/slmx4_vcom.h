@@ -17,7 +17,6 @@
 
 #define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
 #define TIMEOUT_MS 100
-
 class slmx4
 {
 	serialib serial;
@@ -43,8 +42,7 @@ public:
 	int  GetFrameRaw(_Float32* frame);
 	void updateNumberOfSamplers();
 	int  Iterations();
-	void TryUpdateChip(int);
+	void TryUpdateChip(int, void*);
 };
-
 
 #endif
