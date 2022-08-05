@@ -29,6 +29,8 @@ void slmx4::Begin()
 	timer.initTimer();
 
 	init_serial();
+
+	CloseRadar(); //Try to close in case already open
 	OpenRadar();
 
 	while(!isOpen)
