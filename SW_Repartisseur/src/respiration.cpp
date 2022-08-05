@@ -1,6 +1,13 @@
 #include "respiration.h"
 #include <math.h>
 
+/*Ajout de macros pour representer les coefficients
+des fonctions respiration_get_mouvement et respiration_get_presence.
+Choisi suite a des tests (Pourra etre modifie sur Max MSP).
+*/
+#define COEFF_MOUVEMENT 1.25   
+#define COEFF_PRESENCE  0.2
+
 respiration_data_t* respiration_init(int sensor_array_size, int resp_buffer_size){
     respiration_data_t* resp_dat = (respiration_data_t*)malloc(sizeof(respiration_data_t));
 
@@ -54,9 +61,9 @@ int respiration_get_mouvement(float *breath_array, int num_value){
     la premiere valeur entree par la moyenne*/
     means_ref = breath_array[0]/(sum/i);
     
-    /*Si la valeur est au dessus de 1.25 (arbitraire), alors
+    /*Si la valeur est au dessus de COEFF_MOUVEMENT (arbitraire), alors
     mettre mobilite a 1, sinon 0*/
-    if(means_ref > 1.25){
+    if(means_ref > COEFF_MOUVEMENT){
         mobilite = 1; 
     }
     else{
@@ -115,9 +122,9 @@ int respiration_get_presence(float *breath_array, int num_value){
     }
     means_recent = abs(sum_recent / (num_value / 2));
 
-    /*Si cette valeur est sous 0.2 (arbitraire), alors il n'y a personne
+    /*Si cette valeur est sous COEFF_PRESENCE (arbitraire), alors il n'y a personne
     Sinon, presence = 1*/
-    if (means_recent < 0.2) {
+    if (means_recent < COEFF_PRESENCE) {
         presence = 0;
     }
 
