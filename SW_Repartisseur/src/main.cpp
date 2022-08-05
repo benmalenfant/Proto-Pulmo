@@ -57,7 +57,7 @@ int main()
 	while(!go); // BLOCKING
 
 
-	printf("%s\n", host_addr);
+	printf("%s\n", host_addr);	// This can now be used to communicate with MAX
 
 /*
 	slmx4 sensor;
