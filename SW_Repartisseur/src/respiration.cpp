@@ -46,12 +46,13 @@ int respiration_get_mouvement(float *breath_array, int num_value){
 
     //Faire la somme des num_value dernieres valeurs
     for(i=0; i<num_value; i++){
+        
         sum += breath_array[i];
     }
 
     /*faire la moyenne des num_value dernieres valeurs puis diviser
     la premiere valeur entree par la moyenne*/
-    means_ref = breath_array[1]/(sum/i);
+    means_ref = breath_array[0]/(sum/i);
     
     /*Si la valeur est au dessus de 1.25 (arbitraire), alors
     mettre mobilite a 1, sinon 0*/
@@ -66,49 +67,61 @@ int respiration_get_mouvement(float *breath_array, int num_value){
 }
 
 /*  Indicator to see if there's presence
+    breath_array: valeurs obtenues du capteur
     num_value: nombre de valeurs a analyser dans le projet
+    output: 1 ou 0 si presence ou non
 */
 int respiration_get_presence(float *breath_array, int num_value){
+    //Pour calculer la moyenne des valeurs recentes (0 a num_value/2)
+    float sum_past = 0.00;
+    float sum_recent = 0.00;
     int presence;
-    float sum_recent;
-    float sum_past;
+
+    //Pour calculer la moyenne des valeurs passees (num_value/2 a num_value)
     float means_recent;
     float means_past;
     int i;
     int j;
+    int valeur = num_value;
 
-    float* tab_analysis;
+    //Tableau temporaire pour calcul du coefficient de reference
+    float tab_analysis[valeur];
 
     //Faire la somme des num_value dernieres valeurs
-    for(i=0; i<(num_value/2); i++){
-        sum_past += breath_array[num_value-i];
+    for (i = 0; i < (num_value / 2); i++) {
+        printf("sum_past: %f\n", sum_past);
+
+        //-1 puisque la premiere valeur debute a la position 0
+        printf("breath_array: %f\n\n", breath_array[num_value-i-1]);
+        sum_past += breath_array[num_value - i - 1];
         
         //A utiliser au besoin pour un autre test
         //sum_recent += breath_array[i];
     }
-
+    
     //Calcul de la moyenne des derniers points
-    means_past = sum_past/(num_value/2);
+    means_past = sum_past / (num_value / 2);
 
-    //Soustraire chacune des valeurs par la moyenne
-    for(j=0; j<(num_value/2); j++){
-        tab_analysis[j] = breath_array[j]-means_past;
+    //Soustraire chacune des valeurs recentes par la moyenne des derniers points
+    for (j = 0; j < (num_value / 2); j++) {
+        tab_analysis[j] = breath_array[j] - means_past;
+        printf("\ntab_analysis: %f \n", tab_analysis[j]);
     }
 
     /*Faire la moyenne des valeurs obtenus puis faire
     l'absolue pour que la difference soit positif*/
-    for(j=0; j<(num_value/2); j++){
+    for (j = 0; j < (num_value / 2); j++) {
         sum_recent += tab_analysis[j];
     }
-    means_recent = abs(sum_recent/(num_value/2));
-    
+    means_recent = abs(sum_recent / (num_value / 2));
+
     /*Si cette valeur est sous 0.2 (arbitraire), alors il n'y a personne
     Sinon, presence = 1*/
-    if(means_recent<0.2){
+    if (means_recent < 0.2) {
         presence = 0;
     }
 
-    else{
+    else {
         presence = 1;
     }
 
