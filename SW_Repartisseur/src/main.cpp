@@ -21,7 +21,7 @@
 #define PERIOD 5
 
 void *osc_listener(void* vargp);
-void UpdateSensorReg(int reg, float val);
+void UpdateSensorReg(slmx4* sensor, int reg, float val);
 #define RX_WAIT 1
 #define FRAME_START 2
 #define FRAME_END 3
@@ -41,42 +41,35 @@ typedef struct _args
 } *thread_args;
 
 
-static unsigned char rx_wait_arg = 0;
-static float frame_start_arg = 0.2;
-static float frame_end_arg = 4;
-static unsigned char ddc_en_arg = 1;
-static unsigned int PPS_arg = 10;
-
-
-
-
 int main()
 {
-	/* Wait for '@host' message from MAX*/
-	pthread_t listen_thread;
-	thread_args args = (thread_args)malloc(sizeof(struct _args));
-	args->host_addr_str_ptr = &host_addr;
-	args->go_ptr = &go;
-	thread_running = 1;
-	pthread_create(&listen_thread, NULL, osc_listener,(void*)args);
-
-	while(!go); // BLOCKING
+//	/* Wait for '@host' message from MAX*/
+//	pthread_t listen_thread;
+//	thread_args args = (thread_args)malloc(sizeof(struct _args));
+//	args->host_addr_str_ptr = &host_addr;
+//	args->go_ptr = &go;
+//	thread_running = 1;
+//	pthread_create(&listen_thread, NULL, osc_listener,(void*)args);
+//
+//
+//	fprintf(stdout, "Thread: En attente de '@hostadress' sur upd:6969\n");
+//
+//	while(!go); // BLOCKING
 
 
 	printf("%s\n", host_addr);	// This can now be used to communicate with MAX
 
-/*
 	slmx4 sensor;
 
 	sensor.Begin();
 	sensor.Iterations();
 
 
-	UpdateSensorReg(sensor, RX_WAIT, 0);
-	UpdateSensorReg(sensor, FRAME_START, 0.2);
-	UpdateSensorReg(sensor, FRAME_END, 4);
-	UpdateSensorReg(sensor, DDC_EN, 1);
-	UpdateSensorReg(sensor, PPS, 10);
+	UpdateSensorReg(&sensor, RX_WAIT, 0);
+	UpdateSensorReg(&sensor, FRAME_START, 0.2);
+	UpdateSensorReg(&sensor, FRAME_END, 4);
+	UpdateSensorReg(&sensor, DDC_EN, 1);
+	UpdateSensorReg(&sensor, PPS, 10);
 
 
 	respiration_data_t* resp_data = respiration_init(sensor.numSamplers, BREATH_SIZE);
@@ -88,6 +81,8 @@ int main()
 
 	while(go){
 		timer.initTimer();
+
+		//resp_data->format_filter->gain
 
 		sensor.GetFrameNormalized(tablo);
 
@@ -112,11 +107,9 @@ int main()
 	}
 	
 	sensor.End();
-*/
-
 	thread_running = 0;
-	//pthread_join
-	free(args);
+	//pthread_join(listen_thread, NULL);
+	//free(args);
 	return 0;
 }
 
@@ -189,11 +182,13 @@ void *osc_listener(void* vargp)
 				} else {
 					tosc_message osc;
 					tosc_parseMessage(&osc, buffer, len);
+
+					//Parse osc address string (MAX message string)
 					switch(tosc_printMessage(&osc, buff))
 					{
-					case 1:
-						strcpy((char*)params->host_addr_str_ptr, buff);
-						*((volatile unsigned char*)params->go_ptr) = 1;
+					case 1://string starts with '@' : parse as host address
+						strcpy((char*)params->host_addr_str_ptr, buff); //store hostaddr string
+						*((volatile unsigned char*)params->go_ptr) = 1; //break blocking loop for init
 						break;
 					case 2:
 						//Parse cmd strings here

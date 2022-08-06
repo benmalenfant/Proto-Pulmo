@@ -167,18 +167,16 @@ int tosc_printMessage(tosc_message *osc, void* buffer) {
   char _add[32] = {0};
   strcpy(_add, tosc_getAddress(osc));
 
-  if(_add[0] == '@')
+  switch(_add[0])
   {
-	  //char *_parsed = strtok(_add, "@");
+  case '@':
 	  memmove(_add, _add+1, strlen(_add));
 	  strcpy(buffer, _add);
 	  return 1;
-  }
-
-  if(_add[0] == '/')
-  {
-	  char *_parsed = strtok(_add, "/");
-	  strcpy(buffer, _parsed);
+	  break;
+  case '/':
+	  memmove(_add, _add+1, strlen(_add));
+	  strcpy(buffer, _add);
 	  return 2;
   }
 

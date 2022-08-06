@@ -12,6 +12,8 @@
 #include "sendosc.h"
 #include <string.h>
 
+#define DEBUG
+
 #define BUFFER_SIZE 32
 #define ACK_SIZE 6
 
@@ -30,7 +32,7 @@ void slmx4::Begin()
 
 	init_serial();
 
-	CloseRadar(); //Try to close in case already open
+	//CloseRadar(); //Try to close in case already open
 	OpenRadar();
 
 	while(!isOpen)
@@ -164,40 +166,40 @@ int slmx4::Iterations()
 
 void slmx4::TryUpdateChip(int cmd, void* val)
 {
-
-	char _valstr[32];
-	char _cmd[32];
+	const char *zeros[32] = {0};
+	char _valstr[32] = {0};
+	char _cmd[32] = {0};
 
 	switch(cmd)
 	{
 	case rx_wait:
 		sprintf(_valstr, "%i)", *(unsigned char*)val);
-		memcpy(_cmd, "VarSetValue_ByName(rx_wait,", sizeof("VarSetValue_ByName(rx_wait,"));
+		strcpy(_cmd, "VarSetValue_ByName(rx_wait,");
 		strcat(_cmd, _valstr);
 		serial.writeString(_cmd);
 		break;
 
 	case frame_start:
 		sprintf(_valstr, "%.2f)", *(float*)val);
-		memcpy(_cmd, "VarSetValue_ByName(frame_start,", sizeof("VarSetValue_ByName(frame_start,"));
+		strcpy(_cmd, "VarSetValue_ByName(frame_start,");
 		strcat(_cmd, _valstr);
 		serial.writeString(_cmd);
 		break;
 	case frame_end:
 		sprintf(_valstr, "%.2f)", *(float*)val);
-		memcpy(_cmd, "VarSetValue_ByName(frame_end,", sizeof("VarSetValue_ByName(frame_end,"));
+		strcpy(_cmd, "VarSetValue_ByName(frame_end,");
 		strcat(_cmd, _valstr);
 		serial.writeString(_cmd);
 		break;
 	case ddc_en:
 		sprintf(_valstr, "%i)", *(unsigned char*)val);
-		memcpy(_cmd, "VarSetValue_ByName(ddc_en,", sizeof("VarSetValue_ByName(ddc_en,"));
+		strcpy(_cmd, "VarSetValue_ByName(ddc_en,");
 		strcat(_cmd, _valstr);
 		serial.writeString(_cmd);
 		break;
-	case PPS:
+	case pps:
 		sprintf(_valstr, "%i)", *(int*)val);
-		memcpy(_cmd, "VarSetValue_ByName(PPS,", sizeof("VarSetValue_ByName(PPS,"));
+		strcpy(_cmd, "VarSetValue_ByName(PPS,");
 		strcat(_cmd, _valstr);
 		serial.writeString(_cmd);
 		break;
