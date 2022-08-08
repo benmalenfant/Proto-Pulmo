@@ -102,6 +102,16 @@ int main()
 				fprintf(stdout, "%s\n", host_addr);	//This can now be used to communicate with MAX
 				pgm_state = starting;
 			}
+			//Catch flags (set in listener thread)
+			if(cmd__)
+			{
+				cmd__ = 0;
+				pgm_state = parsing;
+			}if(stop__)
+			{
+				stop__ = 0;
+				pgm_state = stopping;
+			}
 			break;
 
 		/* Starting: Go through init sequences and send default values to sensor*/
@@ -119,7 +129,7 @@ int main()
 			UpdateSensorReg(&sensor, DDC_EN, 1);
 			UpdateSensorReg(&sensor, PPS, 10);
 
-			pgm_state = running;
+			pgm_state = stopping; //debug
 			break;
 
 		/* Running: Capture, filter and send frame information to MAX*/
@@ -161,6 +171,12 @@ int main()
 
 		/* Parsing: Respond to command buffer input accordingly*/
 		case parsing:
+
+			if(!sensor.isOpen)
+			{
+				sensor.Begin();
+			}
+
 			char *_cmd, *_valstr;
 			_val = 0;
 
@@ -183,11 +199,32 @@ int main()
 				UpdateSensorReg(&sensor, FRAME_END, _val);
 			}
 
+			//Change le coeff de mouvement
+			if(!strcmp(_cmd, "mouv"))
+			{
+				_valstr = strtok(NULL, "\0");
+				_val = atof((const char*)_valstr);
+				setCoeffMouv(_val);
+			}
+
+			//Change le coeff de mouvement
+			if(!strcmp(_cmd, "pres"))
+			{
+				_valstr = strtok(NULL, "\0");
+				_val = atof((const char*)_valstr);
+				setCoeffPres(_val);
+			}
+
 			//Shutdown command (for testing)
 			if(!strcmp(_cmd, "stop"))
 				pgm_state = stopping;
 
+
+			pgm_state = standby; //debug
+
 			break;
+
+			
 
 		/* Stopping: Shutdown the sensor and close the program */
 		case stopping:

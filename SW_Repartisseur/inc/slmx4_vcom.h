@@ -17,6 +17,7 @@
 
 #define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
 #define TIMEOUT_MS 100
+#define SLEEP_US 10
 class slmx4
 {
 	serialib serial;

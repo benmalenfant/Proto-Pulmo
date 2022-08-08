@@ -37,21 +37,16 @@ int slmx4::Begin()
 
 
 	serial.writeString("Close()");  // Try to close in case already open
-	while(serial.available())		// Flush answer
-		serial.flushReceiver();
+	usleep(100);
+	serial.flushReceiver();
 
 	OpenRadar();
+	init_device();
 
-	while(!isOpen)
-	{
-		if(timer.elapsedTime_ms() > TIMEOUT_MS)
-		{
-			fprintf(stderr,"Timeout: OpenRadar()");
-			return 1;
-		}
-	};
-
-	return 0;
+	if(isOpen)
+		return EXIT_SUCCESS;
+	else
+		return EXIT_FAILURE;
 
 }
 
@@ -76,9 +71,9 @@ void slmx4::init_device()
 
 int slmx4::check_ACK()
 {
-	char ack_[ACK_SIZE];
+	char ack_[32];
 	
-	serial.readBytes(ack_, ACK_SIZE-1, 0);
+	serial.readBytes(ack_, 32-1, TIMEOUT_MS);
 
 	ack_[5] = 0;
 
@@ -88,7 +83,6 @@ int slmx4::check_ACK()
 	else{
 		return EXIT_FAILURE;
 	}
-
 }
 
 
@@ -136,18 +130,23 @@ void slmx4::CloseRadar()
 
 void slmx4::updateNumberOfSamplers()
 {
-	char buffer[BUFFER_SIZE];
+	char buffer[1024];
 
+	serial.flushReceiver();
 	serial.writeString("VarGetValue_ByName(SamplersPerFrame)");
 
-	usleep(10);
-
-	serial.readString(buffer, '0', BUFFER_SIZE, TIMEOUT_MS);
+	serial.readBytes(buffer, 1024, TIMEOUT_MS, SLEEP_US);
 
 	//printf("%s\n", buffer);
 
-	char* token = strtok(buffer, "<");
-	numSamplers = atoi(token);
+	char* _errstr;
+	char* token;
+	token = strtok(buffer, "<");
+	if(!strtol(token, &_errstr, 10))
+		token = strtok(NULL, ">");
+
+	numSamplers = (int)strtol(token, &_errstr, 10);
+
 
 #ifdef DEBUG
 	char text[32];
@@ -176,9 +175,8 @@ int slmx4::Iterations()
 
 void slmx4::TryUpdateChip(int cmd, void* val)
 {
-	const char *zeros[32] = {0};
-	char _valstr[32] = {0};
-	char _cmd[32] = {0};
+	char _valstr[1024] = {0};
+	char _cmd[1024] = {0};
 
 	switch(cmd)
 	{
@@ -190,13 +188,13 @@ void slmx4::TryUpdateChip(int cmd, void* val)
 		break;
 
 	case frame_start:
-		sprintf(_valstr, "%.2f)", *(float*)val);
+		sprintf(_valstr, "%.1f)", *(float*)val);
 		strcpy(_cmd, "VarSetValue_ByName(frame_start,");
 		strcat(_cmd, _valstr);
 		serial.writeString(_cmd);
 		break;
 	case frame_end:
-		sprintf(_valstr, "%.2f)", *(float*)val);
+		sprintf(_valstr, "%.1f)", *(float*)val);
 		strcpy(_cmd, "VarSetValue_ByName(frame_end,");
 		strcat(_cmd, _valstr);
 		serial.writeString(_cmd);

@@ -8,6 +8,14 @@ Choisi suite a des tests (Pourra etre modifie sur Max MSP).
 #define COEFF_MOUVEMENT 1.25   
 #define COEFF_PRESENCE  0.2
 
+// Valeurs par defaut
+static float coeff_mouv = COEFF_MOUVEMENT;
+static float coeff_pres = COEFF_PRESENCE;
+
+// Acces aux parametres dynamiques
+void setCoeffMouv(float val) { coeff_mouv = val; }
+void setCoeffPres(float val) { coeff_pres = val; }
+
 respiration_data_t* respiration_init(int sensor_array_size, int resp_buffer_size){
     respiration_data_t* resp_dat = (respiration_data_t*)malloc(sizeof(respiration_data_t));
 
@@ -61,9 +69,9 @@ int respiration_get_mouvement(float *breath_array, int num_value){
     la premiere valeur entree par la moyenne*/
     means_ref = breath_array[0]/(sum/i);
     
-    /*Si la valeur est au dessus de COEFF_MOUVEMENT (arbitraire), alors
+    /*Si la valeur est au dessus de coeff_mouv (arbitraire), alors
     mettre mobilite a 1, sinon 0*/
-    if(means_ref > COEFF_MOUVEMENT){
+    if(means_ref > coeff_mouv){
         mobilite = 1; 
     }
     else{
@@ -124,7 +132,7 @@ int respiration_get_presence(float *breath_array, int num_value){
 
     /*Si cette valeur est sous COEFF_PRESENCE (arbitraire), alors il n'y a personne
     Sinon, presence = 1*/
-    if (means_recent < COEFF_PRESENCE) {
+    if (means_recent < coeff_pres) {
         presence = 0;
     }
 
