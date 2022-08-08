@@ -16,103 +16,200 @@
 
 #include "testData.h"
 
-#define BREATH_SIZE 6
+/**************************************************************************************/
 
+// Frame capture macros
+#define BREATH_SIZE 6
 #define PERIOD 5
 
-void *osc_listener(void* vargp);
-void UpdateSensorReg(slmx4* sensor, int reg, float val);
+// Sensor register macros
 #define RX_WAIT 1
 #define FRAME_START 2
 #define FRAME_END 3
 #define DDC_EN 4
 #define PPS 5
 
+// Global buffers
 static char host_addr[32] = {0};
-static volatile unsigned char go = 0;
+static char cmd_buf[32] = {0};
 
+// Global flags
+static volatile unsigned char go__ = 0;
+static volatile unsigned char cmd__ = 0;
+static volatile unsigned char stop__ = 0;
 static volatile unsigned char thread_running = 0;
 
-
+// Thread params
 typedef struct _args
 {
 	void* host_addr_str_ptr;
 	volatile void* go_ptr;
+	volatile void* cmd_buf_ptr;
+	volatile void* cmd_flag_ptr;
 } *thread_args;
 
+// Struct memory allocation
+thread_args argsCons();
+void argsDest(thread_args ptr);
 
+// Global states
+enum states{stopped, running, parsing, starting, stopping, standby};
+
+// Local functions
+void *osc_listener(void* vargp);
+void UpdateSensorReg(slmx4* sensor, int reg, float val);
+
+
+/**************************************************************************************/
+/**************************		 		MAIN 				***************************/
+/**************************************************************************************/
 int main()
 {
-//	/* Wait for '@host' message from MAX*/
-//	pthread_t listen_thread;
-//	thread_args args = (thread_args)malloc(sizeof(struct _args));
-//	args->host_addr_str_ptr = &host_addr;
-//	args->go_ptr = &go;
-//	thread_running = 1;
-//	pthread_create(&listen_thread, NULL, osc_listener,(void*)args);
-//
-//
-//	fprintf(stdout, "Thread: En attente de '@hostadress' sur upd:6969\n");
-//
-//	while(!go); // BLOCKING
+
+	/* Create OSC listener thread */
+	/* {{ Waits for '@host' message from MAX }} */
+	pthread_t listen_thread;
+	thread_args args = argsCons();
+	thread_running = 1;
+	pthread_create(&listen_thread, NULL, osc_listener,(void*)args);
+	fprintf(stdout, "Thread: En attente de '@hostadress' sur upd:6969\n");
 
 
-	printf("%s\n", host_addr);	// This can now be used to communicate with MAX
-
+	/* Sensor data init */
 	slmx4 sensor;
-
-	sensor.Begin();
-	sensor.Iterations();
-
-
-	UpdateSensorReg(&sensor, RX_WAIT, 0);
-	UpdateSensorReg(&sensor, FRAME_START, 0.2);
-	UpdateSensorReg(&sensor, FRAME_END, 4);
-	UpdateSensorReg(&sensor, DDC_EN, 1);
-	UpdateSensorReg(&sensor, PPS, 10);
-
-
 	respiration_data_t* resp_data = respiration_init(sensor.numSamplers, BREATH_SIZE);
-
-
 	_Float32* tablo = (_Float32*)malloc(sizeof(_Float32)*sensor.numSamplers);
 
+	/* Parser values */
+	double _val = 0;
+
+	/* Timer for easy timeout implementation */
 	timeOut timer;
 
-	while(go){
-		timer.initTimer();
+	/* Init state */
+	states pgm_state = standby;
 
-		//resp_data->format_filter->gain
 
-		sensor.GetFrameNormalized(tablo);
+	while(1)
+	{
+		switch(pgm_state)
+		{
+		/* Standby: Wait for go from listener thread */
+		case standby:
+			if(go__)
+			{
+				sensor.setHost(host_addr);
+				fprintf(stdout, "%s\n", host_addr);	// This can now be used to communicate with MAX
+				pgm_state = starting;
+			}
+			break;
 
-		respiration_update(tablo, sensor.numSamplers, resp_data);
+		/* Starting: Go through init sequences and send default values to sensor*/
+		case starting:
+			if(sensor.Begin())
+			{
+				pgm_state = stopping;
+				break;
+			}
 
-		FILE* fichier = fopen("./FILE", "w+");
-		for(int i = 0; i < sensor.numSamplers-1; i++){
-			fprintf(fichier,"%f,",tablo[i]);
-		}
+			sensor.Iterations();//Default values
+			UpdateSensorReg(&sensor, RX_WAIT, 0);
+			UpdateSensorReg(&sensor, FRAME_START, 0.2);
+			UpdateSensorReg(&sensor, FRAME_END, 4);
+			UpdateSensorReg(&sensor, DDC_EN, 1);
+			UpdateSensorReg(&sensor, PPS, 10);
 
-		fprintf(fichier,"%f",tablo[sensor.numSamplers-1]);
+			pgm_state = running;
+			break;
 
-		fflush(fichier);
-		fclose(fichier);
+		/* Running: Capture, filter and send frame information to MAX*/
+		case running:
+			if(timer.elapsedTime_ms() > PERIOD)
+			{
+				timer.initTimer();
 
-		if(timer.elapsedTime_ms() > PERIOD){
-			fprintf(stderr, "CAUTION : CANNOT RESPECT DEFINED PERIOD || Elapsed : %ims, Period : %ims\r\n",(int)timer.elapsedTime_ms(), PERIOD);
-		}
-		else{
-			while(timer.elapsedTime_ms() < PERIOD);
+				//resp_data->format_filter->gain
+				sensor.GetFrameNormalized(tablo);
+				respiration_update(tablo, sensor.numSamplers, resp_data);
+				FILE* fichier = fopen("./FILE", "w+");
+
+				for(int i = 0; i < sensor.numSamplers-1; i++)
+					fprintf(fichier,"%f,",tablo[i]);
+
+				fprintf(fichier,"%f",tablo[sensor.numSamplers-1]);
+				fflush(fichier);
+				fclose(fichier);
+
+				//Catch flags (set in listener thread)
+				if(cmd__)
+				{
+					cmd__ = 0;
+					pgm_state = parsing;
+				}if(stop__)
+				{
+					stop__ = 0;
+					pgm_state = stopping;
+				}
+
+				//Timer has exceeded period before looping back
+				if(timer.elapsedTime_ms() > PERIOD)
+					fprintf(stderr, "CAUTION : CANNOT RESPECT DEFINED PERIOD || Elapsed : %ims, Period : %ims\r\n",
+							(int)timer.elapsedTime_ms(), PERIOD);
+			}
+			break;
+
+		/* Parsing: Respond to command buffer input accordingly*/
+		case parsing:
+			char *_cmd, *_valstr;
+			_val = 0;
+
+			//Command format:: '/cmd=value'
+			_cmd = strtok(cmd_buf, "=");
+
+			//Frame start command
+			if(!strcmp(_cmd, "fstart"))
+			{
+				_valstr = strtok(NULL, "\0");
+				_val = atof((const char*)_valstr);
+				UpdateSensorReg(&sensor, FRAME_START, _val);
+			}
+
+			//Frame end command
+			if(!strcmp(_cmd, "fend"))
+			{
+				_valstr = strtok(NULL, "\0");
+				_val = atof((const char*)_valstr);
+				UpdateSensorReg(&sensor, FRAME_END, _val);
+			}
+
+			//Shutdown command (for testing)
+			if(!strcmp(_cmd, "stop"))
+				pgm_state = stopping;
+
+			break;
+
+		/* Stopping: Shutdown the sensor and close the program */
+		case stopping:
+			sensor.End();
+			thread_running = 0;
+			pthread_join(listen_thread, NULL);
+			argsDest(args);
+			return 0;
+
+		default:
+			break;
 		}
 	}
-	
-	sensor.End();
-	thread_running = 0;
-	//pthread_join(listen_thread, NULL);
-	//free(args);
 	return 0;
 }
+/**************************************************************************************/
 
+
+/* UpdateSensorReg()
+ *	- sensor: 	Pointer to sensor obj
+ *	- reg: 		Register to be updated on sensor (see macros)
+ *	- val: 		Value sent to register
+ */
 void UpdateSensorReg(slmx4* sensor, int reg, float val)
 {
 	switch (reg)
@@ -139,21 +236,22 @@ void UpdateSensorReg(slmx4* sensor, int reg, float val)
 		break;
 	}
 }
+/**************************************************************************************/
 
 
-/**
- * A basic program to listen to port 9000 and print received OSC packets.
+/* osc_listener()
+ *	- vargp: Pointeur vers thread params
  */
 void *osc_listener(void* vargp)
 {
 	thread_args params = (thread_args) vargp;
 
 
-	char buffer[2048]; // declare a 2Kb buffer to read packet data into
+	char buffer[2048]; //Buffer de 2kB pour lire le packet
 
-	// open a socket to listen for datagrams (i.e. UDP packets) on port 9000
+	// Ouvrir le socket et ecouter sur le port 6969
 	const int fd = socket(AF_INET, SOCK_DGRAM, 0);
-	fcntl(fd, F_SETFL, O_NONBLOCK); // set the socket to non-blocking
+	fcntl(fd, F_SETFL, O_NONBLOCK); // non-blockant
 	struct sockaddr_in sin;
 	sin.sin_family = AF_INET;
 	sin.sin_port = htons(6969);
@@ -165,9 +263,9 @@ void *osc_listener(void* vargp)
 		fd_set readSet;
 		FD_ZERO(&readSet);
 		FD_SET(fd, &readSet);
-		struct timeval timeout = {1, 0}; // select times out after 1 second
+		struct timeval timeout = {1, 0};
 		if (select(fd+1, &readSet, NULL, NULL, &timeout) > 0) {
-			struct sockaddr sa; // can be safely cast to sockaddr_in
+			struct sockaddr sa;
 			socklen_t sa_len = sizeof(struct sockaddr_in);
 			int len = 0;
 			while ((len = (int) recvfrom(fd, buffer, sizeof(buffer), 0, &sa, &sa_len)) > 0) {
@@ -191,7 +289,8 @@ void *osc_listener(void* vargp)
 						*((volatile unsigned char*)params->go_ptr) = 1; //break blocking loop for init
 						break;
 					case 2:
-						//Parse cmd strings here
+						strcpy((char*)params->cmd_buf_ptr, buff); //store cmd string
+						*((volatile unsigned char*)params->cmd_flag_ptr) = 1;
 						break;
 					default: break;
 					}
@@ -200,12 +299,31 @@ void *osc_listener(void* vargp)
 			}
 		}
 	}
-
 	// close the UDP socket
 	close(fd);
-
 	return 0;
 }
+/**************************************************************************************/
 
 
+/* argsCons()
+ *	Initialisation du struct passe au thread
+ */
+thread_args argsCons()
+{
+	thread_args _args= (thread_args)malloc(sizeof(struct _args));
+	_args->host_addr_str_ptr = &host_addr;
+	_args->go_ptr = &go__;
+	_args->cmd_buf_ptr = &cmd_buf;
+	_args->cmd_flag_ptr = &cmd__;
+	return _args;
+}
 
+/* argsDest()
+ *	Destruction du struct passe au thread
+ */
+void argsDest(thread_args ptr)
+{
+	free(ptr);
+}
+/**************************************************************************************/
