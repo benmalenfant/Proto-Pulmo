@@ -15,6 +15,8 @@ static float coeff_pres = COEFF_PRESENCE;
 // Acces aux parametres dynamiques
 void setCoeffMouv(float val) { coeff_mouv = val; }
 void setCoeffPres(float val) { coeff_pres = val; }
+float getCoeffMouv() { return coeff_mouv; }
+float getCoeffPres() { return coeff_pres; } 
 
 respiration_data_t* respiration_init(int sensor_array_size, int resp_buffer_size){
     respiration_data_t* resp_dat = (respiration_data_t*)malloc(sizeof(respiration_data_t));

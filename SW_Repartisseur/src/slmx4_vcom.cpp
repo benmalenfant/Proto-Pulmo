@@ -34,14 +34,10 @@ int slmx4::Begin()
 	timer.initTimer();
 	init_serial();
 
-
-
-	serial.writeString("Close()");  // Try to close in case already open
-	usleep(100);
-	serial.flushReceiver();
+	init_device();
 
 	OpenRadar();
-	init_device();
+	
 
 	if(isOpen)
 		return EXIT_SUCCESS;
@@ -130,7 +126,7 @@ void slmx4::CloseRadar()
 
 void slmx4::updateNumberOfSamplers()
 {
-	char buffer[1024];
+	char buffer[1024] = {0};
 
 	serial.flushReceiver();
 	serial.writeString("VarGetValue_ByName(SamplersPerFrame)");
@@ -141,11 +137,15 @@ void slmx4::updateNumberOfSamplers()
 
 	char* _errstr;
 	char* token;
-	token = strtok(buffer, "<");
-	if(!strtol(token, &_errstr, 10))
-		token = strtok(NULL, ">");
-
-	numSamplers = (int)strtol(token, &_errstr, 10);
+	token = strtok(buffer, "<"); //Find number within ACKs...
+	if(token)
+	{
+		if(!strtol(token, &_errstr, 10))
+			token = strtok(NULL, ">"); // if any.
+		
+		numSamplers = (int)strtol(token, &_errstr, 10);
+	}
+	
 
 
 #ifdef DEBUG

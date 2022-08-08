@@ -36,6 +36,7 @@ static char cmd_buf[32] = {0};
 // Global flags
 static volatile unsigned char go__ = 0;
 static volatile unsigned char cmd__ = 0;
+static volatile unsigned char host__ = 0;
 static volatile unsigned char stop__ = 0;
 static volatile unsigned char thread_running = 0;
 
@@ -46,6 +47,7 @@ typedef struct _args
 	volatile void* go_ptr;
 	volatile void* cmd_buf_ptr;
 	volatile void* cmd_flag_ptr;
+	volatile void* host_flag_ptr;
 } *thread_args;
 
 // Struct memory allocation
@@ -73,6 +75,7 @@ int main()
 	thread_running = 1;
 	pthread_create(&listen_thread, NULL, osc_listener,(void*)args);
 	fprintf(stdout, "Thread: En attente de '@hostadress' sur upd:6969\n");
+	fflush(stdout);
 
 
 	/* Sensor data init */
@@ -88,8 +91,7 @@ int main()
 
 	/* Init state */
 	states pgm_state = standby;
-
-
+	
 	while(1)
 	{
 		switch(pgm_state)
@@ -98,11 +100,17 @@ int main()
 		case standby:
 			if(go__)
 			{
-				sensor.setHost(host_addr);
-				fprintf(stdout, "%s\n", host_addr);	//This can now be used to communicate with MAX
+				go__ == 0;
 				pgm_state = starting;
 			}
 			//Catch flags (set in listener thread)
+			if(host__)
+			{
+				host__ = 0;
+				sensor.setHost(host_addr);
+				fprintf(stdout, "%s\n", host_addr);	//This can now be used to communicate with MAX
+				fflush(stdout);
+			}
 			if(cmd__)
 			{
 				cmd__ = 0;
@@ -205,6 +213,8 @@ int main()
 				_valstr = strtok(NULL, "\0");
 				_val = atof((const char*)_valstr);
 				setCoeffMouv(_val);
+				fprintf(stdout, "Coefficient de mouvement = %.2f\n", getCoeffMouv());
+				fflush(stdout);
 			}
 
 			//Change le coeff de mouvement
@@ -213,14 +223,15 @@ int main()
 				_valstr = strtok(NULL, "\0");
 				_val = atof((const char*)_valstr);
 				setCoeffPres(_val);
+				fprintf(stdout, "Coefficient de presence = %.2f\n", getCoeffPres());
+				fflush(stdout);
 			}
 
 			//Shutdown command (for testing)
 			if(!strcmp(_cmd, "stop"))
 				pgm_state = stopping;
-
-
-			pgm_state = standby; //debug
+			else
+				pgm_state = standby; //debug
 
 			break;
 
@@ -324,7 +335,7 @@ void *osc_listener(void* vargp)
 					{
 					case 1://string starts with '@' : parse as host address
 						strcpy((char*)params->host_addr_str_ptr, buff); //store hostaddr string
-						*((volatile unsigned char*)params->go_ptr) = 1; //break blocking loop for init
+						*((volatile unsigned char*)params->host_flag_ptr) = 1; //break blocking loop for init
 						break;
 					case 2:
 						strcpy((char*)params->cmd_buf_ptr, buff); //store cmd string
@@ -354,6 +365,7 @@ thread_args argsCons()
 	_args->go_ptr = &go__;
 	_args->cmd_buf_ptr = &cmd_buf;
 	_args->cmd_flag_ptr = &cmd__;
+	_args->host_flag_ptr = &host__;
 	return _args;
 }
 

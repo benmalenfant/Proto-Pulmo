@@ -32,5 +32,11 @@ void setCoeffMouv(float val);
 //Set le coefficient de presence
 void setCoeffPres(float val);
 
+//Retourne le coefficient de mouvement
+float getCoeffMouv();
+
+//Retourne le coefficient de presence
+float getCoeffPres();
+
 
 #endif
