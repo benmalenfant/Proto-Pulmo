@@ -99,7 +99,7 @@ int main()
 			if(go__)
 			{
 				sensor.setHost(host_addr);
-				fprintf(stdout, "%s\n", host_addr);	// This can now be used to communicate with MAX
+				fprintf(stdout, "%s\n", host_addr);	//This can now be used to communicate with MAX
 				pgm_state = starting;
 			}
 			break;
@@ -109,7 +109,7 @@ int main()
 			if(sensor.Begin())
 			{
 				pgm_state = stopping;
-				break;
+				break;	//Stop if Begin() times out
 			}
 
 			sensor.Iterations();//Default values
@@ -124,6 +124,7 @@ int main()
 
 		/* Running: Capture, filter and send frame information to MAX*/
 		case running:
+			//Triggers every given PERIOD (ms)
 			if(timer.elapsedTime_ms() > PERIOD)
 			{
 				timer.initTimer();
