@@ -18,7 +18,11 @@ respiration_data_t* respiration_init(int sensor_array_size, int resp_buffer_size
 //Master Function, calls other functions inside the loop
 int respiration_update(float *sensor_array, int sensor_array_size, respiration_data_t* respiration_data);
 
+
 int respiration_format(float *in_array, float *out_array, int array_size);
+
+//Breathing parser function. 
+float breathing_parser(float *format_sensor_array, int position_array);
 
 //Indicator to see if there's movement
 int respiration_get_mouvement(float *breath_array, int num_value);
