@@ -25,3 +25,5 @@ Le repo est separe en 3 dossiers principaux :
 	 - Scripts Matlab qui ont servi au développement de l'algorithme de detection
  - **SW_Repartisseur**
 	 - Code C pour permettre l'interface avec le capteur, la détection de respiration et l'envoi des données vers MaxMSP
+
+## Usage
