@@ -80,8 +80,8 @@ int main()
 
 	/* Sensor data init */
 	slmx4 sensor;
-	respiration_data_t* resp_data = respiration_init(sensor.numSamplers, BREATH_SIZE);
-	_Float32* tablo = (_Float32*)malloc(sizeof(_Float32)*sensor.numSamplers);
+	respiration_data_t* resp_data;
+	_Float32* sensor_data;
 
 	/* Parser values */
 	double _val = 0;
@@ -90,7 +90,7 @@ int main()
 	timeOut timer;
 
 	/* Init state */
-	states pgm_state = standby;
+	states pgm_state = starting;
 	
 	while(1)
 	{
@@ -100,7 +100,7 @@ int main()
 		case standby:
 			if(go__)
 			{
-				go__ == 0;
+				go__ = 0;
 				pgm_state = starting;
 			}
 			//Catch flags (set in listener thread)
@@ -137,7 +137,10 @@ int main()
 			UpdateSensorReg(&sensor, DDC_EN, 1);
 			UpdateSensorReg(&sensor, PPS, 10);
 
-			pgm_state = stopping; //debug
+			resp_data = respiration_init(sensor.numSamplers, BREATH_SIZE);
+			sensor_data = (_Float32*)malloc(sizeof(_Float32)*sensor.numSamplers);
+
+			pgm_state = running; //debug
 			break;
 
 		/* Running: Capture, filter and send frame information to MAX*/
@@ -147,15 +150,19 @@ int main()
 			{
 				timer.initTimer();
 
-				//resp_data->format_filter->gain
-				sensor.GetFrameNormalized(tablo);
-				respiration_update(tablo, sensor.numSamplers, resp_data);
+				sensor.GetFrameNormalized(sensor_data);
+				respiration_update(sensor_data, sensor.numSamplers, resp_data);
 				FILE* fichier = fopen("./FILE", "w+");
+				if(fichier == NULL){
+    			  	fprintf(stderr,"ERR\n\n");
+					break;
+				}
+
 
 				for(int i = 0; i < sensor.numSamplers-1; i++)
-					fprintf(fichier,"%f,",tablo[i]);
+					fprintf(fichier,"%f,",sensor_data[i]);
 
-				fprintf(fichier,"%f",tablo[sensor.numSamplers-1]);
+				fprintf(fichier,"%f",sensor_data[sensor.numSamplers-1]);
 				fflush(fichier);
 				fclose(fichier);
 
