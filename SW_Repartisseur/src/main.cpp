@@ -11,7 +11,7 @@
 
 #define BREATH_SIZE 6
 
-#define PERIOD 5
+#define PERIOD 50
 
 int main()
 {
