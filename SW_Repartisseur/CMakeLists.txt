@@ -21,9 +21,8 @@ find_package(Threads REQUIRED)
 
 link_directories(/usr/local/lib)
   
-set(CMAKE_CXX_FLAGS "-g -Wall")
+set(CMAKE_CXX_FLAGS "-g -Wall -pthread")
 set(CMAKE_C_FLAGS "-g -Wall")
-SET(CMAKE_CXX_FLAGS -pthread)
 
 include_directories(./inc)
 
