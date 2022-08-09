@@ -20,7 +20,7 @@
 
 // Frame capture macros
 #define BREATH_SIZE 6
-#define PERIOD 5
+#define PERIOD 50
 
 // Sensor register macros
 #define RX_WAIT 1

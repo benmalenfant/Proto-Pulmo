@@ -25,8 +25,8 @@ respiration_data_t* respiration_init(int sensor_array_size, int resp_buffer_size
     resp_dat->resp_buffer_size = resp_buffer_size;
 
     resp_dat->format_filter = init_filter(LOWPASS, 0.05);
-    resp_dat->filter1_data = init_2d_filter(sensor_array_size, HIGHPASS,0.8);
-    resp_dat->filter2_data = init_2d_filter(sensor_array_size, LOWPASS ,0.1);
+    resp_dat->filter1_data = init_2d_filter(sensor_array_size, HIGHPASS,0.7);
+    resp_dat->filter2_data = init_2d_filter(sensor_array_size, LOWPASS ,0.03);
     resp_dat->filter3_data = init_2d_filter(sensor_array_size, LOWPASS ,0.1);
 
     return(resp_dat);
@@ -37,6 +37,9 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
     float formated_sensor_data_filt[sensor_array_size];
 
     float highpassed_sensor_data[sensor_array_size];
+    float abs_highpassed_sensor_data[sensor_array_size];
+
+    float presence_indicator_data[sensor_array_size];
 
     for(int i = 0; i < sensor_array_size; i++){
         formated_sensor_data[i] = abs(sensor_array[i]-255);
@@ -45,8 +48,18 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
     for(int i = 0; i < sensor_array_size; i++){
         formated_sensor_data_filt[i] = updateFilter(formated_sensor_data[i],respiration_data->format_filter);
     }
+ 
+    update2dFilter(formated_sensor_data_filt, highpassed_sensor_data, respiration_data->filter1_data);
 
-    update2dFilter(formated_sensor_data_filt, sensor_array, respiration_data->filter1_data);
+    for(int i = 0; i < sensor_array_size; i++){
+        abs_highpassed_sensor_data[i] = abs(highpassed_sensor_data[i]);
+    }
+
+    update2dFilter(abs_highpassed_sensor_data, presence_indicator_data, respiration_data->filter2_data);
+
+    for(int i = 0; i < sensor_array_size; i++){
+        sensor_array[i] = presence_indicator_data[i];
+    }
 
     return(EXIT_SUCCESS);
 }
