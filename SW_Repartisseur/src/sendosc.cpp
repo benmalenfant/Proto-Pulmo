@@ -18,19 +18,18 @@
 #define MESSAGE_MAX BUF_SIZE / 2
 
 #define PORT 5555
-static const char* host_addr = "10.0.2.2";
 
 /*------------------------------------------------------------------------------------*/
 
 
-int sendosc(type t, void* val)
+int sendosc(type t, void* val, const char* host)
 {
 	using namespace osc;
 
 	int i = 0; //var for sine
 
 	// setup udp socket
-	UdpTransmitSocket transmitSocket(IpEndpointName(host_addr, PORT));
+	UdpTransmitSocket transmitSocket(IpEndpointName(host, PORT));
 
 
 

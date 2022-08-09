@@ -15,11 +15,15 @@ https://github.com/novelda/Legacy-Documentation
  
 ## Contenu
 Le repo est separe en 3 dossiers principaux :
-
+- **Boitier** 
+	 -  Fichiers sources pour le boitier du capteur
+	 -	Fichiers exportés pret à l'impression 3D
  - **Firmware_Capteur** 
-	 -  Code pour le logiciel embarqué qui roule sur le capteur 
+	 - Code pour le logiciel embarqué qui roule sur le capteur 
 	 - Viens de SensorLogic
  - **Matlab** 
 	 - Scripts Matlab qui ont servi au développement de l'algorithme de detection
  - **SW_Repartisseur**
 	 - Code C pour permettre l'interface avec le capteur, la détection de respiration et l'envoi des données vers MaxMSP
+
+## Usage

@@ -373,24 +373,12 @@ char serialib::writeChar(const char Byte)
   */
 char serialib::writeString(const char *receivedString)
 {
-#if defined (_WIN32) || defined( _WIN64)
-    // Number of bytes written
-    DWORD dwBytesWritten;
-    // Write the string
-    if(!WriteFile(hSerial,receivedString,strlen(receivedString),&dwBytesWritten,NULL))
-        // Error while writing, return -1
-        return -1;
-    // Write operation successfull
-    return 1;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Lenght of the string
     int Lenght=strlen(receivedString);
     // Write the string
     if (write(fd,receivedString,Lenght)!=Lenght) return -1;
     // Write operation successfull
     return 1;
-#endif
 }
 
 // _____________________________________
@@ -407,22 +395,10 @@ char serialib::writeString(const char *receivedString)
   */
 char serialib::writeBytes(const void *Buffer, const unsigned int NbBytes)
 {
-#if defined (_WIN32) || defined( _WIN64)
-    // Number of bytes written
-    DWORD dwBytesWritten;
-    // Write data
-    if(!WriteFile(hSerial, Buffer, NbBytes, &dwBytesWritten, NULL))
-        // Error while writing, return -1
-        return -1;
-    // Write operation successfull
-    return 1;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Write data
     if (write (fd,Buffer,NbBytes)!=(ssize_t)NbBytes) return -1;
     // Write operation successfull
     return 1;
-#endif
 }
 
 
@@ -439,26 +415,7 @@ char serialib::writeBytes(const void *Buffer, const unsigned int NbBytes)
   */
 char serialib::readChar(char *pByte,unsigned int timeOut_ms)
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Number of bytes read
-    DWORD dwBytesRead = 0;
 
-    // Set the TimeOut
-    timeouts.ReadTotalTimeoutConstant=timeOut_ms;
-
-    // Write the parameters, return -1 if an error occured
-    if(!SetCommTimeouts(hSerial, &timeouts)) return -1;
-
-    // Read the byte, return -2 if an error occured
-    if(!ReadFile(hSerial,pByte, 1, &dwBytesRead, NULL)) return -2;
-
-    // Return 0 if the timeout is reached
-    if (dwBytesRead==0) return 0;
-
-    // The byte is read
-    return 1;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Timer used for timeout
     timeOut         timer;
     // Initialise the timer
@@ -473,7 +430,6 @@ char serialib::readChar(char *pByte,unsigned int timeOut_ms)
         }
     }
     return 0;
-#endif
 }
 
 
@@ -613,27 +569,6 @@ int serialib::readString(char *receivedString,char finalChar,unsigned int maxNbB
   */
 int serialib::readBytes (void *buffer,unsigned int maxNbBytes,unsigned int timeOut_ms, unsigned int sleepDuration_us)
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Avoid warning while compiling
-    UNUSED(sleepDuration_us);
-
-    // Number of bytes read
-    DWORD dwBytesRead = 0;
-
-    // Set the TimeOut
-    timeouts.ReadTotalTimeoutConstant=(DWORD)timeOut_ms;
-
-    // Write the parameters and return -1 if an error occrured
-    if(!SetCommTimeouts(hSerial, &timeouts)) return -1;
-
-
-    // Read the bytes from the serial device, return -2 if an error occured
-    if(!ReadFile(hSerial,buffer,(DWORD)maxNbBytes,&dwBytesRead, NULL))  return -2;
-
-    // Return the byte read
-    return dwBytesRead;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Timer used for timeout
     timeOut          timer;
     // Initialise the timer
@@ -663,7 +598,6 @@ int serialib::readBytes (void *buffer,unsigned int maxNbBytes,unsigned int timeO
     }
     // Timeout reached, return the number of bytes read
     return NbByteRead;
-#endif
 }
 
 
@@ -681,15 +615,9 @@ int serialib::readBytes (void *buffer,unsigned int maxNbBytes,unsigned int timeO
 */
 char serialib::flushReceiver()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Purge receiver
-    return PurgeComm (hSerial, PURGE_RXCLEAR);
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Purge receiver
     tcflush(fd,TCIFLUSH);
     return true;
-#endif
 }
 
 
@@ -700,22 +628,10 @@ char serialib::flushReceiver()
 */
 int serialib::available()
 {    
-#if defined (_WIN32) || defined(_WIN64)
-    // Device errors
-    DWORD commErrors;
-    // Device status
-    COMSTAT commStatus;
-    // Read status
-    ClearCommError(hSerial, &commErrors, &commStatus);
-    // Return the number of pending bytes
-    return commStatus.cbInQue;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     int nBytes=0;
     // Return number of pending bytes in the receiver
     ioctl(fd, FIONREAD, &nBytes);
     return nBytes;
-#endif
 
 }
 
@@ -752,19 +668,12 @@ bool serialib::DTR(bool status)
 */
 bool serialib::setDTR()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Set DTR
-    currentStateDTR=true;
-    return EscapeCommFunction(hSerial,SETDTR);
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Set DTR
     int status_DTR=0;
     ioctl(fd, TIOCMGET, &status_DTR);
     status_DTR |= TIOCM_DTR;
     ioctl(fd, TIOCMSET, &status_DTR);
     return true;
-#endif
 }
 
 /*!
@@ -775,19 +684,12 @@ bool serialib::setDTR()
 */
 bool serialib::clearDTR()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Clear DTR
-    currentStateDTR=true;
-    return EscapeCommFunction(hSerial,CLRDTR);
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Clear DTR
     int status_DTR=0;
     ioctl(fd, TIOCMGET, &status_DTR);
     status_DTR &= ~TIOCM_DTR;
     ioctl(fd, TIOCMSET, &status_DTR);
     return true;
-#endif
 }
 
 
@@ -820,19 +722,12 @@ bool serialib::RTS(bool status)
 */
 bool serialib::setRTS()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Set RTS
-    currentStateRTS=false;
-    return EscapeCommFunction(hSerial,SETRTS);
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Set RTS
     int status_RTS=0;
     ioctl(fd, TIOCMGET, &status_RTS);
     status_RTS |= TIOCM_RTS;
     ioctl(fd, TIOCMSET, &status_RTS);
     return true;
-#endif
 }
 
 
@@ -845,19 +740,12 @@ bool serialib::setRTS()
 */
 bool serialib::clearRTS()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    // Clear RTS
-    currentStateRTS=false;
-    return EscapeCommFunction(hSerial,CLRRTS);
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Clear RTS
     int status_RTS=0;
     ioctl(fd, TIOCMGET, &status_RTS);
     status_RTS &= ~TIOCM_RTS;
     ioctl(fd, TIOCMSET, &status_RTS);
     return true;
-#endif
 }
 
 
@@ -870,17 +758,10 @@ bool serialib::clearRTS()
   */
 bool serialib::isCTS()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    DWORD modemStat;
-    GetCommModemStatus(hSerial, &modemStat);
-    return modemStat & MS_CTS_ON;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the CTS bit
     ioctl(fd, TIOCMGET, &status);
     return status & TIOCM_CTS;
-#endif
 }
 
 
@@ -892,17 +773,10 @@ bool serialib::isCTS()
   */
 bool serialib::isDSR()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    DWORD modemStat;
-    GetCommModemStatus(hSerial, &modemStat);
-    return modemStat & MS_DSR_ON;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the DSR bit
     ioctl(fd, TIOCMGET, &status);
     return status & TIOCM_DSR;
-#endif
 }
 
 
@@ -918,17 +792,10 @@ bool serialib::isDSR()
   */
 bool serialib::isDCD()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    DWORD modemStat;
-    GetCommModemStatus(hSerial, &modemStat);
-    return modemStat & MS_RLSD_ON;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the DCD bit
     ioctl(fd, TIOCMGET, &status);
     return status & TIOCM_CAR;
-#endif
 }
 
 
@@ -939,17 +806,10 @@ bool serialib::isDCD()
   */
 bool serialib::isRI()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    DWORD modemStat;
-    GetCommModemStatus(hSerial, &modemStat);
-    return modemStat & MS_RING_ON;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the RING bit
     ioctl(fd, TIOCMGET, &status);
     return status & TIOCM_RNG;
-#endif
 }
 
 
@@ -961,15 +821,10 @@ bool serialib::isRI()
   */
 bool serialib::isDTR()
 {
-#if defined (_WIN32) || defined( _WIN64)
-    return currentStateDTR;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the DTR bit
     ioctl(fd, TIOCMGET, &status);
     return status & TIOCM_DTR  ;
-#endif
 }
 
 
@@ -982,15 +837,10 @@ bool serialib::isDTR()
   */
 bool serialib::isRTS()
 {
-#if defined (_WIN32) || defined(_WIN64)
-    return currentStateRTS;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     int status=0;
     //Get the current status of the CTS bit
     ioctl(fd, TIOCMGET, &status);
     return status & TIOCM_RTS;
-#endif
 }
 
 
