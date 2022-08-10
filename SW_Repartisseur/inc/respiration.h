@@ -3,9 +3,13 @@
 
 #include "filters.h"
 
+
+
 typedef  struct{
     filter_data_t*   format_filter;
     filter_data_t*   maxx_filter;
+    filter_data_t*   resp_filter;
+    filter_data_t*   sumMotion_filter;
     filter_data_2d_t* filter1_data;
     filter_data_2d_t* filter2_data;
     filter_data_2d_t* filter3_data;

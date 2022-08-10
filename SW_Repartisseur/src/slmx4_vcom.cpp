@@ -63,7 +63,7 @@ int slmx4::check_ACK()
 {
 	char ack_[ACK_SIZE];
 	
-	serial.readBytes(ack_, ACK_SIZE-1, 0);
+	serial.readBytes(ack_, ACK_SIZE-1, TIMEOUT_MS);
 
 	ack_[5] = 0;
 
@@ -132,7 +132,12 @@ void slmx4::updateNumberOfSamplers()
 	//printf("%s\n", buffer);
 
 	char* token = strtok(buffer, "<");
-	numSamplers = atoi(token);
+	if(token != NULL){
+		numSamplers = atoi(token);
+	}
+	else{
+		fprintf(stderr,"ERROR reading number of samplers\n");
+	}
 
 #ifdef DEBUG
 	char text[32];
@@ -151,7 +156,13 @@ int slmx4::Iterations()
 	serial.readString(buffer, '0', BUFFER_SIZE, TIMEOUT_MS);
 
 	char* token = strtok(buffer, "<");
-	int iterations = atoi(token);
+	int iterations = 0;
+	if(token != NULL){
+		iterations = atoi(token);
+	}
+	else{
+		fprintf(stderr,"ERROR reading number of Iterations\n");
+	}
 
 #ifdef DEBUG
 	printf("Iterations: %i\n", iterations);
@@ -168,7 +179,7 @@ void slmx4::TryUpdateChip(int cmd,void* test)
 		serial.writeString("VarSetValue_ByName(rx_wait,0)");
 		break;
 	case frame_start:
-		serial.writeString("VarSetValue_ByName(frame_start,0.2)");
+		serial.writeString("VarSetValue_ByName(frame_start,0.3)");
 		break;
 	case frame_end:
 		serial.writeString("VarSetValue_ByName(frame_end,4)");
@@ -221,12 +232,14 @@ void slmx4::init_serial()
 		#endif
     	serial.setDTR();
     	serial.setRTS();
+		serial.flushReceiver();
     }
 }
 
 
 int slmx4::GetFrameRaw(_Float32* frame)
 {
+	serial.flushReceiver();
 	int frameSize = (numSamplers);
 	int av = 0;
 	
@@ -274,6 +287,7 @@ int slmx4::GetFrameRaw(_Float32* frame)
 
 int slmx4::GetFrameNormalized(_Float32* frame)
 {
+	serial.flushReceiver();
 	int frameSize = (numSamplers);
 	int av = 0;
 	

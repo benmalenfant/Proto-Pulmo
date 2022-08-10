@@ -158,19 +158,19 @@ int main()
 					break;
 				}
 
-				
+				/*
 				for(int i = 0; i < sensor.numSamplers-1; i++)
 					fprintf(fichier,"%f,",sensor_data[i]);
 
 				fprintf(fichier,"%f",sensor_data[sensor.numSamplers-1]);
-				
+				*/
 
-				/*
+				
 				for(int i = 0; i < resp_data->resp_buffer_size-1; i++)
 					fprintf(fichier,"%f,",resp_data->resp_buffer[i]);
 
 				fprintf(fichier,"%f",resp_data->resp_buffer[resp_data->resp_buffer_size -1]);
-				*/
+				
 				fflush(fichier);
 				fclose(fichier);
 
