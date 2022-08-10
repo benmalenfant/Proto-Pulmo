@@ -124,12 +124,11 @@ int main()
 
 		/* Starting: Go through init sequences and send default values to sensor*/
 		case starting:
-			sensor.Begin();
-			/*if(sensor.Begin())
+			if(sensor.Begin() == EXIT_FAILURE)
 			{
 				pgm_state = stopping;
 				break;	//Stop if Begin() times out
-			}*/
+			}
 
 			sensor.Iterations();//Default values
 			UpdateSensorReg(&sensor, RX_WAIT, 0);
@@ -160,22 +159,25 @@ int main()
 				}
 
 
+				/*
+
 				for(int i = 0; i < sensor.numSamplers-1; i++)
 					fprintf(fichier,"%f,",sensor_data[i]);
 
 				fprintf(fichier,"%f",sensor_data[sensor.numSamplers-1]);
+        */
 
 				float parse = (50*resp_data->resp_buffer[0]); //TODO: Move declaration
  				int parsed_send = (int)parse;
 				sendosc(int_, &parsed_send,host_addr);
 
 
-				/*
+				
 				for(int i = 0; i < resp_data->resp_buffer_size-1; i++)
 					fprintf(fichier,"%f,",resp_data->resp_buffer[i]);
 
 				fprintf(fichier,"%f",resp_data->resp_buffer[resp_data->resp_buffer_size -1]);
-				*/
+				
 				fflush(fichier);
 				fclose(fichier);
 

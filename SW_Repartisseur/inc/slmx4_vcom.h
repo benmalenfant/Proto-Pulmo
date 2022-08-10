@@ -23,7 +23,7 @@ class slmx4
 	serialib serial;
 
 	void init_device();
-	void init_serial();
+	int init_serial();
 	void OpenRadar();
 	void CloseRadar();
 
@@ -39,7 +39,7 @@ public:
 	slmx4();
 	enum cmds{rx_wait,frame_start,frame_end,ddc_en, pps};
 
-	void Begin();
+	int Begin();
 	void End();
 	void setHost(const char *addr);
 	int  GetFrameNormalized(_Float32* frame);

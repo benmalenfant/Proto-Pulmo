@@ -9,6 +9,12 @@ Choisi suite a des tests (Pourra etre modifie sur Max MSP).
 #define COEFF_PRESENCE  0.2
 #define WINDOW_SIZE      60
 
+#define MOTION_TRESHOLD 3.3
+#define PRESENCE_TRESHOLD 0.3
+
+#define DIST_MIN 0.3
+#define DIST_MAX 4.0
+
 // Valeurs par defaut
 static float coeff_mouv = COEFF_MOUVEMENT;
 static float coeff_pres = COEFF_PRESENCE;
@@ -26,10 +32,13 @@ respiration_data_t* respiration_init(int sensor_array_size, int resp_buffer_size
     resp_dat->resp_buffer_size = resp_buffer_size;
 
     resp_dat->format_filter = init_filter(LOWPASS, 0.05);
-    resp_dat->maxx_filter = init_filter(LOWPASS, 0.05);
+    resp_dat->maxx_filter = init_filter(LOWPASS, 0.01);
+    resp_dat->resp_filter = init_filter(LOWPASS, 0.1);
+    resp_dat->sumMotion_filter = init_filter(LOWPASS, 0.096);
+
     resp_dat->filter1_data = init_2d_filter(sensor_array_size, LOWPASS ,0.3);
     resp_dat->filter2_data = init_2d_filter(sensor_array_size, HIGHPASS,0.9);
-    resp_dat->filter3_data = init_2d_filter(sensor_array_size, LOWPASS ,0.04);
+    resp_dat->filter3_data = init_2d_filter(sensor_array_size, LOWPASS ,0.01);
 
     return(resp_dat);
 }
@@ -45,6 +54,7 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
     float presence_indicator_data[sensor_array_size];
 
     float rolling_averaged_data[sensor_array_size];
+    float rolling_averaged_data2[sensor_array_size];
 
     for(int i = 0; i < sensor_array_size; i++){
         formated_sensor_data[i] = abs(sensor_array[i]-255);
@@ -57,7 +67,7 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
 
     update2dFilter(formated_sensor_data_filt, lowpassed_sensor_data, respiration_data->filter1_data);
  
-    update2dFilter(lowpassed_sensor_data, highpassed_sensor_data, respiration_data->filter2_data);
+    update2dFilter(formated_sensor_data_filt, highpassed_sensor_data, respiration_data->filter2_data);
 
     for(int i = 0; i < sensor_array_size; i++){
         abs_highpassed_sensor_data[i] = abs(highpassed_sensor_data[i]);
@@ -82,38 +92,59 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
         rolling_averaged_data[i] = average/(float)WINDOW_SIZE;
     }
 
+     for(int i = WINDOW_SIZE/2; i < sensor_array_size - (WINDOW_SIZE/2);i++){
+        float average = 0;
+        for(int j = -WINDOW_SIZE/2; j < WINDOW_SIZE/2; j++){
+            average += rolling_averaged_data[i+j];
+        }
+        rolling_averaged_data2[i] = average/(float)WINDOW_SIZE;
+    }
+
     int maxx = 0;
     float maxy = 0;
     for(int i = 0; i < sensor_array_size; i++){
-        if(rolling_averaged_data[i] > maxy){
+        if(rolling_averaged_data2[i] > maxy){
             maxx = i;
-            maxy = rolling_averaged_data[i];
+            maxy = rolling_averaged_data2[i];
         }
     }
 
     float filt_maxx = updateFilter((float)maxx,respiration_data->maxx_filter);
 
-    if(abs(filt_maxx - maxx) > 4){
-       respiration_data->maxx_filter->output = maxx;
-    }
-
-    if(abs(filt_maxx - respiration_data->max_index) > 2){
-        respiration_data->max_index = (int) filt_maxx;
-    }
+    respiration_data->max_index = (int) filt_maxx;
     
 
     for(int i = 0; i < sensor_array_size; i++){
-        sensor_array[i] = rolling_averaged_data[i];
+        sensor_array[i] = rolling_averaged_data2[i];
     }
 
     float breath = breathing_parser(formated_sensor_data_filt,sensor_array_size,maxx);
 
+    float breath_filt = updateFilter(breath,respiration_data->resp_filter);
+
     for(int i = respiration_data->resp_buffer_size-1; i > 0 ; i--){
         respiration_data->resp_buffer[i] = respiration_data->resp_buffer[i-1];
     }
-    respiration_data->resp_buffer[0] = breath;
-    
-    printf("Maxx : %d, Breath = %f\n",respiration_data->max_index,breath);
+
+    float sumMotion = 0;
+
+    for(int i = 0; i < sensor_array_size; i++){
+        sumMotion += abs(highpassed_sensor_data[i]);
+    }
+
+    float filt_sumMotion = updateFilter(sumMotion,respiration_data->sumMotion_filter);
+    int motion = filt_sumMotion > MOTION_TRESHOLD;
+
+    int presence = filt_sumMotion > PRESENCE_TRESHOLD;
+
+    respiration_data->resp_buffer[0] = -1 * breath_filt * ((float)motion -1) * presence;
+
+    respiration_data->mouvement = motion;
+    respiration_data->presence = presence;
+
+    float distance = (respiration_data->max_index * (float)(DIST_MAX - DIST_MIN)/sensor_array_size + DIST_MIN);
+
+    printf("Maxx : %d, Motion = %d, Presence = %d, dist = %f\n",respiration_data->max_index,motion, presence, distance);
 
     return(EXIT_SUCCESS);
 }
