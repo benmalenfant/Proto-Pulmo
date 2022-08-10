@@ -7,6 +7,7 @@ Choisi suite a des tests (Pourra etre modifie sur Max MSP).
 */
 #define COEFF_MOUVEMENT 1.25   
 #define COEFF_PRESENCE  0.2
+#define WindowSize      4
 
 // Valeurs par defaut
 static float coeff_mouv = COEFF_MOUVEMENT;
@@ -63,6 +64,57 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
 
     return(EXIT_SUCCESS);
 }
+    /*
+    %Additionner les points se retrouvant à droite de la plage
+    %d'échantillonnage et le mettre dans la variable moyenne
+    for i=windowSize/2:1:frameSize-windowSize/2
+        moyenne(i) = sum(filtFrame(3,((i-windowSize/2)+1:(i+windowSize/2))));
+    end
+    
+    %Trouver le maximum en x et en y des points et y ajouter la moitié
+    %restante pour positionner le point au plus récent
+    [maxy maxx] = max(moyenne);
+    %maxx = maxx + windowSize / 2;
+    */
+
+//Breathing parser function. 
+float breathing_parser(float *format_sensor_array, int position){
+    //Sert a connaitre la moyenne des valeurs
+    float moyenne; 
+    float somme;
+
+    //Connaitre la grandeur du format_sensor_array:
+    int size_array = sizeof(format_sensor_array)/sizeof(float);
+
+    //Verifier que les valeurs envoye par la fonction n'excedent pas le array
+    if(position+(WindowSize/2) > size_array ){
+        printf("breathing_parser: position + windowSize/2 excede le array");
+        return;
+    }
+
+    if(position-(WindowSize/2) < 0) {
+        printf("breathing_parser: position - windowSize/2 excede le array");
+        return;
+    }
+
+    if(position < 0) {
+        printf("breathing_parser: position ne peut etre plus petit que 0!");
+        return;
+    }
+    
+
+    //Faire la somme des valeurs obtenue pour ensuite s'occuper du projet
+    for(int i = position-WindowSize/2; i<position+WindowSize/2; i++){
+        somme += format_sensor_array[i];
+    }
+    
+    //
+    moyenne = somme/WindowSize;
+
+    //Retour de la moyenne
+    return moyenne;
+}
+
 
 //Indicator to see if there's movement
 //breath_array: valeurs obtenues du capteur
