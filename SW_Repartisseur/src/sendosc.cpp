@@ -23,11 +23,11 @@
 
 
 //int sendosc(type t, void* val, const char* host)
-int sendosc(type t, void* val)
+int sendosc(type t, void* val, const char* host)
 {
 	using namespace osc;
 
-	const char host[30] = "bob";
+	//const char host[30] = "bob";
 
 	int i = 0; //var for sine
 
@@ -47,18 +47,18 @@ int sendosc(type t, void* val)
 		switch(t)
 		{
 		case int_:
-			strcat(path, "int");
+			strcpy(path, "int");
 			p << osc::BeginMessage(path);
 			p << *((int*)val);
 			p << osc::EndMessage;
 			break;
 		case string_:
-			strcat(path, (const char*)val);
+			strcpy(path, (const char*)val);
 			p << osc::BeginMessage(path);
 			p << osc::EndMessage;
 			break;
 		case sine_:
-			strcat(path, "int");
+			strcpy(path, "int");
 			while(1)
 			{
 				p << osc::BeginMessage(path);
@@ -68,6 +68,12 @@ int sendosc(type t, void* val)
 				++i;
 			}
 
+			break;
+		case float_:
+			strcpy(path, "float");
+			p << osc::BeginMessage(path);
+			p << *((float*)val);
+			p << osc::EndMessage;
 			break;
 		}
 

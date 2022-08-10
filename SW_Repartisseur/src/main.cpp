@@ -100,7 +100,7 @@ int main()
 			if(go__)
 			{
 				go__ = 0;
-				pgm_state = starting;
+				pgm_state = standby;
 			}
 			//Catch flags (set in listener thread)
 			if(host__)
@@ -109,6 +109,7 @@ int main()
 				sensor.setHost(host_addr);
 				fprintf(stdout, "%s\n", host_addr);	//This can now be used to communicate with MAX
 				fflush(stdout);
+				pgm_state = starting;
 			}
 			if(cmd__)
 			{
@@ -158,13 +159,16 @@ int main()
 					break;
 				}
 
-				
+
 				for(int i = 0; i < sensor.numSamplers-1; i++)
 					fprintf(fichier,"%f,",sensor_data[i]);
 
 				fprintf(fichier,"%f",sensor_data[sensor.numSamplers-1]);
-				sendosc(int_, &sensor_data[sensor.numSamplers-1], host_addr);
-				
+
+				float parse = (50*resp_data->resp_buffer[0]); //TODO: Move declaration
+ 				int parsed_send = (int)parse;
+				sendosc(int_, &parsed_send,host_addr);
+
 
 				/*
 				for(int i = 0; i < resp_data->resp_buffer_size-1; i++)
@@ -196,10 +200,10 @@ int main()
 		/* Parsing: Respond to command buffer input accordingly*/
 		case parsing:
 
-			if(!sensor.isOpen)
-			{
-				sensor.Begin();
-			}
+		//	if(!sensor.isOpen)
+		//	{
+		//		sensor.Begin();
+		//	}
 
 			char *_cmd, *_valstr;
 			_val = 0;
@@ -243,6 +247,10 @@ int main()
 				fflush(stdout);
 			}
 
+			//Start command
+			if(!strcmp(_cmd, "start"))
+				pgm_state = starting;
+			
 			//Shutdown command (for testing)
 			if(!strcmp(_cmd, "stop"))
 				pgm_state = stopping;
