@@ -10,6 +10,10 @@ Choisi suite a des tests (Pourra etre modifie sur Max MSP).
 #define WINDOW_SIZE      60
 
 #define MOTION_TRESHOLD 3.3
+#define PRESENCE_TRESHOLD 0.4
+
+#define DIST_MIN 0.3
+#define DIST_MAX 4.0
 
 // Valeurs par defaut
 static float coeff_mouv = COEFF_MOUVEMENT;
@@ -121,9 +125,6 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
     for(int i = respiration_data->resp_buffer_size-1; i > 0 ; i--){
         respiration_data->resp_buffer[i] = respiration_data->resp_buffer[i-1];
     }
-    
-
-    int motion = respiration_get_mouvement(respiration_data->resp_buffer, 2);
 
     float sumMotion = 0;
 
@@ -132,11 +133,18 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
     }
 
     float filt_sumMotion = updateFilter(sumMotion,respiration_data->sumMotion_filter);
-    motion = filt_sumMotion > MOTION_TRESHOLD;
+    int motion = filt_sumMotion > MOTION_TRESHOLD;
 
-    respiration_data->resp_buffer[0] = -1 * breath_filt * ((float)motion -1);
+    int presence = filt_sumMotion > PRESENCE_TRESHOLD;
 
-    printf("Maxx : %d, Motion = %d\n",respiration_data->max_index,motion);
+    respiration_data->resp_buffer[0] = -1 * breath_filt * ((float)motion -1) * presence;
+
+    respiration_data->mouvement = motion;
+    respiration_data->presence = presence;
+
+    float distance = (respiration_data->max_index * (float)(DIST_MAX - DIST_MIN)/sensor_array_size + DIST_MIN);
+
+    printf("Maxx : %d, Motion = %d, Presence = %d, dist = %f\n",respiration_data->max_index,motion, presence, distance);
 
     return(EXIT_SUCCESS);
 }

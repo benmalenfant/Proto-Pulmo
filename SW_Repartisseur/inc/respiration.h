@@ -16,6 +16,9 @@ typedef  struct{
     int resp_buffer_size;
     float* resp_buffer;
     int max_index;
+    int presence;
+    int mouvement;
+    float distance;
 }respiration_data_t;
 
 //Master Function, appel les autres functions dans la boucle
