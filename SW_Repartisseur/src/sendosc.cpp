@@ -22,9 +22,12 @@
 /*------------------------------------------------------------------------------------*/
 
 
-int sendosc(type t, void* val, const char* host)
+//int sendosc(type t, void* val, const char* host)
+int sendosc(type t, void* val)
 {
 	using namespace osc;
+
+	const char host[30] = "bob";
 
 	int i = 0; //var for sine
 

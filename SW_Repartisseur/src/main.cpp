@@ -19,7 +19,7 @@
 /**************************************************************************************/
 
 // Frame capture macros
-#define BREATH_SIZE 6
+#define BREATH_SIZE 300
 #define PERIOD 50
 
 // Sensor register macros
@@ -67,7 +67,6 @@ void UpdateSensorReg(slmx4* sensor, int reg, float val);
 /**************************************************************************************/
 int main()
 {
-
 	/* Create OSC listener thread */
 	/* {{ Waits for '@host' message from MAX }} */
 	pthread_t listen_thread;
@@ -80,8 +79,8 @@ int main()
 
 	/* Sensor data init */
 	slmx4 sensor;
-	respiration_data_t* resp_data = respiration_init(sensor.numSamplers, BREATH_SIZE);
-	_Float32* tablo = (_Float32*)malloc(sizeof(_Float32)*sensor.numSamplers);
+	respiration_data_t* resp_data;
+	_Float32* sensor_data;
 
 	/* Parser values */
 	double _val = 0;
@@ -90,7 +89,7 @@ int main()
 	timeOut timer;
 
 	/* Init state */
-	states pgm_state = standby;
+	states pgm_state = starting;
 	
 	while(1)
 	{
@@ -100,14 +99,14 @@ int main()
 		case standby:
 			if(go__)
 			{
-				go__ == 0;
+				go__ = 0;
 				pgm_state = starting;
 			}
 			//Catch flags (set in listener thread)
 			if(host__)
 			{
 				host__ = 0;
-				sensor.setHost(host_addr);
+				//sensor.setHost(host_addr);
 				fprintf(stdout, "%s\n", host_addr);	//This can now be used to communicate with MAX
 				fflush(stdout);
 			}
@@ -124,7 +123,7 @@ int main()
 
 		/* Starting: Go through init sequences and send default values to sensor*/
 		case starting:
-			if(sensor.Begin())
+			if(sensor.Begin() == EXIT_FAILURE)
 			{
 				pgm_state = stopping;
 				break;	//Stop if Begin() times out
@@ -137,7 +136,10 @@ int main()
 			UpdateSensorReg(&sensor, DDC_EN, 1);
 			UpdateSensorReg(&sensor, PPS, 10);
 
-			pgm_state = stopping; //debug
+			resp_data = respiration_init(sensor.numSamplers, BREATH_SIZE);
+			sensor_data = (_Float32*)malloc(sizeof(_Float32)*sensor.numSamplers);
+
+			pgm_state = running; //debug
 			break;
 
 		/* Running: Capture, filter and send frame information to MAX*/
@@ -147,15 +149,27 @@ int main()
 			{
 				timer.initTimer();
 
-				//resp_data->format_filter->gain
-				sensor.GetFrameNormalized(tablo);
-				respiration_update(tablo, sensor.numSamplers, resp_data);
+				sensor.GetFrameNormalized(sensor_data);
+				respiration_update(sensor_data, sensor.numSamplers, resp_data);
 				FILE* fichier = fopen("./FILE", "w+");
+				if(fichier == NULL){
+    			  	fprintf(stderr,"ERR\n\n");
+					break;
+				}
 
+				/*
 				for(int i = 0; i < sensor.numSamplers-1; i++)
-					fprintf(fichier,"%f,",tablo[i]);
+					fprintf(fichier,"%f,",sensor_data[i]);
 
-				fprintf(fichier,"%f",tablo[sensor.numSamplers-1]);
+				fprintf(fichier,"%f",sensor_data[sensor.numSamplers-1]);
+				*/
+
+				
+				for(int i = 0; i < resp_data->resp_buffer_size-1; i++)
+					fprintf(fichier,"%f,",resp_data->resp_buffer[i]);
+
+				fprintf(fichier,"%f",resp_data->resp_buffer[resp_data->resp_buffer_size -1]);
+				
 				fflush(fichier);
 				fclose(fichier);
 
@@ -343,7 +357,6 @@ void *osc_listener(void* vargp)
 						break;
 					default: break;
 					}
-
 				}
 			}
 		}
