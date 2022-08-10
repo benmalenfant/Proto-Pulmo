@@ -22,12 +22,14 @@ slmx4::slmx4()
 	status = -1;
 }
 
-void slmx4::Begin()
+int slmx4::Begin()
 {
 	timeOut timer;
 	timer.initTimer();
 
-	init_serial();
+	if(init_serial() == EXIT_FAILURE){
+		return(EXIT_FAILURE);
+	}
 	OpenRadar();
 
 	while(!isOpen)
@@ -37,7 +39,7 @@ void slmx4::Begin()
 			fprintf(stderr,"Timeout: OpenRadar()");
 		}
 	};
-
+	return(EXIT_SUCCESS);
 }
 
 void slmx4::init_device()
@@ -209,7 +211,7 @@ void slmx4::TryUpdateChip(int cmd,void* test)
 
 }
 
-void slmx4::init_serial()
+int slmx4::init_serial()
 {
 	// Connection to serial port
 	char errorOpening = serial.openDevice(SERIAL_PORT, 115200);
@@ -222,6 +224,7 @@ void slmx4::init_serial()
     {
     	printf ("ERROR connection to serial port: %i\n", errorOpening);
     	sendosc(string_, (void*)"ERROR connection to serial port");
+		return(EXIT_FAILURE);
     }
 
     else
@@ -233,6 +236,7 @@ void slmx4::init_serial()
     	serial.setDTR();
     	serial.setRTS();
 		serial.flushReceiver();
+		return(EXIT_SUCCESS);
     }
 }
 

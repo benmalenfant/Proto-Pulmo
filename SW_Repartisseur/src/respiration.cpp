@@ -10,7 +10,7 @@ Choisi suite a des tests (Pourra etre modifie sur Max MSP).
 #define WINDOW_SIZE      60
 
 #define MOTION_TRESHOLD 3.3
-#define PRESENCE_TRESHOLD 0.4
+#define PRESENCE_TRESHOLD 0.3
 
 #define DIST_MIN 0.3
 #define DIST_MAX 4.0

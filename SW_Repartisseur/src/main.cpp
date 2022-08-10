@@ -123,12 +123,11 @@ int main()
 
 		/* Starting: Go through init sequences and send default values to sensor*/
 		case starting:
-			sensor.Begin();
-			/*if(sensor.Begin())
+			if(sensor.Begin() == EXIT_FAILURE)
 			{
 				pgm_state = stopping;
 				break;	//Stop if Begin() times out
-			}*/
+			}
 
 			sensor.Iterations();//Default values
 			UpdateSensorReg(&sensor, RX_WAIT, 0);
