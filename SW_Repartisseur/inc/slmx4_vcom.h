@@ -29,6 +29,8 @@ class slmx4
 
 	int check_ACK();
 
+	char host_ip[128];
+
 public:
 	int status;
 	int numSamplers;
@@ -39,6 +41,7 @@ public:
 
 	void Begin();
 	void End();
+	void setHost(const char *addr);
 	int  GetFrameNormalized(_Float32* frame);
 	int  GetFrameRaw(_Float32* frame);
 	void updateNumberOfSamplers();

@@ -89,7 +89,7 @@ int main()
 	timeOut timer;
 
 	/* Init state */
-	states pgm_state = starting;
+	states pgm_state = standby;
 	
 	while(1)
 	{
@@ -106,7 +106,7 @@ int main()
 			if(host__)
 			{
 				host__ = 0;
-				//sensor.setHost(host_addr);
+				sensor.setHost(host_addr);
 				fprintf(stdout, "%s\n", host_addr);	//This can now be used to communicate with MAX
 				fflush(stdout);
 			}
@@ -163,6 +163,7 @@ int main()
 					fprintf(fichier,"%f,",sensor_data[i]);
 
 				fprintf(fichier,"%f",sensor_data[sensor.numSamplers-1]);
+				sendosc(int_, &sensor_data[sensor.numSamplers-1], host_addr);
 				
 
 				/*

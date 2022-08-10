@@ -319,6 +319,11 @@ int slmx4::GetFrameNormalized(_Float32* frame)
 
 }
 
+void slmx4::setHost(const char *addr)
+{
+	strcpy(host_ip, addr);
+}
+
 void slmx4::End()
 {
 	CloseRadar();
