@@ -7,7 +7,7 @@ Choisi suite a des tests (Pourra etre modifie sur Max MSP).
 */
 #define COEFF_MOUVEMENT 1.25   
 #define COEFF_PRESENCE  0.2
-#define WindowSize      4
+#define WINDOW_SIZE      60
 
 // Valeurs par defaut
 static float coeff_mouv = COEFF_MOUVEMENT;
@@ -22,13 +22,14 @@ float getCoeffPres() { return coeff_pres; }
 respiration_data_t* respiration_init(int sensor_array_size, int resp_buffer_size){
     respiration_data_t* resp_dat = (respiration_data_t*)malloc(sizeof(respiration_data_t));
 
-    resp_dat->resp_buffer = (float*)malloc(resp_buffer_size);
+    resp_dat->resp_buffer = (float*)malloc(resp_buffer_size*sizeof(float));
     resp_dat->resp_buffer_size = resp_buffer_size;
 
     resp_dat->format_filter = init_filter(LOWPASS, 0.05);
-    resp_dat->filter1_data = init_2d_filter(sensor_array_size, HIGHPASS,0.7);
-    resp_dat->filter2_data = init_2d_filter(sensor_array_size, LOWPASS ,0.03);
-    resp_dat->filter3_data = init_2d_filter(sensor_array_size, LOWPASS ,0.1);
+    resp_dat->maxx_filter = init_filter(LOWPASS, 0.05);
+    resp_dat->filter1_data = init_2d_filter(sensor_array_size, LOWPASS ,0.3);
+    resp_dat->filter2_data = init_2d_filter(sensor_array_size, HIGHPASS,0.9);
+    resp_dat->filter3_data = init_2d_filter(sensor_array_size, LOWPASS ,0.04);
 
     return(resp_dat);
 }
@@ -37,79 +38,129 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
     float formated_sensor_data[sensor_array_size];
     float formated_sensor_data_filt[sensor_array_size];
 
+    float lowpassed_sensor_data[sensor_array_size];
     float highpassed_sensor_data[sensor_array_size];
     float abs_highpassed_sensor_data[sensor_array_size];
 
     float presence_indicator_data[sensor_array_size];
 
+    float rolling_averaged_data[sensor_array_size];
+
     for(int i = 0; i < sensor_array_size; i++){
         formated_sensor_data[i] = abs(sensor_array[i]-255);
     }
 
+    respiration_data->format_filter->output = 0;
     for(int i = 0; i < sensor_array_size; i++){
         formated_sensor_data_filt[i] = updateFilter(formated_sensor_data[i],respiration_data->format_filter);
     }
+
+    update2dFilter(formated_sensor_data_filt, lowpassed_sensor_data, respiration_data->filter1_data);
  
-    update2dFilter(formated_sensor_data_filt, highpassed_sensor_data, respiration_data->filter1_data);
+    update2dFilter(lowpassed_sensor_data, highpassed_sensor_data, respiration_data->filter2_data);
 
     for(int i = 0; i < sensor_array_size; i++){
         abs_highpassed_sensor_data[i] = abs(highpassed_sensor_data[i]);
     }
 
-    update2dFilter(abs_highpassed_sensor_data, presence_indicator_data, respiration_data->filter2_data);
+    update2dFilter(abs_highpassed_sensor_data, presence_indicator_data, respiration_data->filter3_data);
+
+    //set extremities to 0
+    for(int i = 0; i < WINDOW_SIZE/2;i++){
+        rolling_averaged_data[i] = 0;
+    }
+    for(int i =  sensor_array_size - (WINDOW_SIZE/2); i < sensor_array_size;i++){
+        rolling_averaged_data[i] = 0;
+    }
+
+    //Calc rolling average window
+    for(int i = WINDOW_SIZE/2; i < sensor_array_size - (WINDOW_SIZE/2);i++){
+        float average = 0;
+        for(int j = -WINDOW_SIZE/2; j < WINDOW_SIZE/2; j++){
+            average += presence_indicator_data[i+j];
+        }
+        rolling_averaged_data[i] = average/(float)WINDOW_SIZE;
+    }
+
+    int maxx = 0;
+    float maxy = 0;
+    for(int i = 0; i < sensor_array_size; i++){
+        if(rolling_averaged_data[i] > maxy){
+            maxx = i;
+            maxy = rolling_averaged_data[i];
+        }
+    }
+
+    float filt_maxx = updateFilter((float)maxx,respiration_data->maxx_filter);
+
+    if(abs(filt_maxx - maxx) > 4){
+       respiration_data->maxx_filter->output = maxx;
+    }
+
+    if(abs(filt_maxx - respiration_data->max_index) > 2){
+        respiration_data->max_index = (int) filt_maxx;
+    }
+    
 
     for(int i = 0; i < sensor_array_size; i++){
-        sensor_array[i] = presence_indicator_data[i];
+        sensor_array[i] = rolling_averaged_data[i];
     }
+
+    float breath = breathing_parser(formated_sensor_data_filt,sensor_array_size,maxx);
+
+    for(int i = respiration_data->resp_buffer_size-1; i > 0 ; i--){
+        respiration_data->resp_buffer[i] = respiration_data->resp_buffer[i-1];
+    }
+    respiration_data->resp_buffer[0] = breath;
+    
+    printf("Maxx : %d, Breath = %f\n",respiration_data->max_index,breath);
 
     return(EXIT_SUCCESS);
 }
+
     /*
     %Additionner les points se retrouvant à droite de la plage
     %d'échantillonnage et le mettre dans la variable moyenne
-    for i=windowSize/2:1:frameSize-windowSize/2
-        moyenne(i) = sum(filtFrame(3,((i-windowSize/2)+1:(i+windowSize/2))));
+    for i=WINDOW_SIZE/2:1:frameSize-WINDOW_SIZE/2
+        moyenne(i) = sum(filtFrame(3,((i-WINDOW_SIZE/2)+1:(i+WINDOW_SIZE/2))));
     end
     
     %Trouver le maximum en x et en y des points et y ajouter la moitié
     %restante pour positionner le point au plus récent
     [maxy maxx] = max(moyenne);
-    %maxx = maxx + windowSize / 2;
+    %maxx = maxx + WINDOW_SIZE / 2;
     */
 
 //Breathing parser function. 
-float breathing_parser(float *format_sensor_array, int position){
+float breathing_parser(float *format_sensor_array, int size_array, int position){
     //Sert a connaitre la moyenne des valeurs
     float moyenne; 
     float somme;
 
-    //Connaitre la grandeur du format_sensor_array:
-    int size_array = sizeof(format_sensor_array)/sizeof(float);
-
     //Verifier que les valeurs envoye par la fonction n'excedent pas le array
-    if(position+(WindowSize/2) > size_array ){
-        printf("breathing_parser: position + windowSize/2 excede le array");
-        return;
+    if(position+(WINDOW_SIZE/2) > size_array ){
+        printf("breathing_parser: position + WINDOW_SIZE/2 excede le array");
+        return 0;
     }
 
-    if(position-(WindowSize/2) < 0) {
-        printf("breathing_parser: position - windowSize/2 excede le array");
-        return;
+    if(position-(WINDOW_SIZE/2) < 0) {
+        printf("breathing_parser: position - WINDOW_SIZE/2 excede le array");
+        return 0;
     }
 
     if(position < 0) {
         printf("breathing_parser: position ne peut etre plus petit que 0!");
-        return;
+        return 0;
     }
     
 
     //Faire la somme des valeurs obtenue pour ensuite s'occuper du projet
-    for(int i = position-WindowSize/2; i<position+WindowSize/2; i++){
+    for(int i = position-WINDOW_SIZE/2; i<position+WINDOW_SIZE/2; i++){
         somme += format_sensor_array[i];
     }
     
     //
-    moyenne = somme/WindowSize;
+    moyenne = somme/WINDOW_SIZE;
 
     //Retour de la moyenne
     return moyenne;

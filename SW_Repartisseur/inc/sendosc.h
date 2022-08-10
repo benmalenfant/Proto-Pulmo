@@ -4,7 +4,7 @@
 enum type{int_, string_, sine_};
 
 
-int sendosc(type t, void* val, const char* host);
+int sendosc(type t, void* val);
 
 
 #endif

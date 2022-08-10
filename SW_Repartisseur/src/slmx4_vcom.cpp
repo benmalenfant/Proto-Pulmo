@@ -10,9 +10,6 @@
 
 #include "slmx4_vcom.h"
 #include "sendosc.h"
-#include <string.h>
-
-#define DEBUG
 
 #define BUFFER_SIZE 32
 #define ACK_SIZE 6
@@ -25,24 +22,21 @@ slmx4::slmx4()
 	status = -1;
 }
 
-void slmx4::setHost(const char* host) { strcpy(host_addr, host); }
-
-int slmx4::Begin()
+void slmx4::Begin()
 {
-	unsigned char tmpdata;
 	timeOut timer;
 	timer.initTimer();
+
 	init_serial();
-
-	init_device();
-
 	OpenRadar();
-	
 
-	if(isOpen)
-		return EXIT_SUCCESS;
-	else
-		return EXIT_FAILURE;
+	while(!isOpen)
+	{
+		if(timer.elapsedTime_ms() > TIMEOUT_MS)
+		{
+			fprintf(stderr,"Timeout: OpenRadar()");
+		}
+	};
 
 }
 
@@ -53,13 +47,13 @@ void slmx4::init_device()
 	if(!check_ACK()){
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'init_device'\n");
-		sendosc(string_, (void*)"SUCCESS: ACK from 'init_device'", host_addr);
+		sendosc(string_, (void*)"SUCCESS: ACK from 'init_device'");
 		#endif
 	}
  	else{ 
 		#ifdef DEBUG
 		printf("ERROR: Reading ACK in 'init_device'\n");
-		sendosc(string_, (void*)"ERROR: Reading ACK in 'init_device'\n", host_addr);
+		sendosc(string_, (void*)"ERROR: Reading ACK in 'init_device'\n");
 		#endif
 	}
 }
@@ -67,9 +61,9 @@ void slmx4::init_device()
 
 int slmx4::check_ACK()
 {
-	char ack_[32];
+	char ack_[ACK_SIZE];
 	
-	serial.readBytes(ack_, 32-1, TIMEOUT_MS);
+	serial.readBytes(ack_, ACK_SIZE-1, 0);
 
 	ack_[5] = 0;
 
@@ -79,6 +73,7 @@ int slmx4::check_ACK()
 	else{
 		return EXIT_FAILURE;
 	}
+
 }
 
 
@@ -89,13 +84,13 @@ void slmx4::OpenRadar()
 	if(!check_ACK()){
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'OpenRadar'\n");
-		sendosc(string_, (void*)"SUCCESS: ACK from 'OpenRadar'", host_addr);
+		sendosc(string_, (void*)"SUCCESS: ACK from 'OpenRadar'");
 		#endif
 	}
  	else{ 
 		#ifdef DEBUG
 		printf("ERROR: Reading ACK in 'OpenRadar'\n");
-		sendosc(string_, (void*)"ERROR: Reading ACK in 'OpenRadar'\n", host_addr);
+		sendosc(string_, (void*)"ERROR: Reading ACK in 'OpenRadar'\n");
 		#endif
 	}
 
@@ -111,13 +106,13 @@ void slmx4::CloseRadar()
 	if(!check_ACK()){
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'CloseRadar'\n");
-		sendosc(string_, (void*)"SUCCESS: ACK from 'CloseRadar'", host_addr);
+		sendosc(string_, (void*)"SUCCESS: ACK from 'CloseRadar'");
 		#endif
 	}
  	else{ 
 		#ifdef DEBUG
 		printf("ERROR: Reading ACK in 'CloseRadar'\n");
-		sendosc(string_, (void*)"ERROR: Reading ACK in 'CloseRadar'\n", host_addr);
+		sendosc(string_, (void*)"ERROR: Reading ACK in 'CloseRadar'\n");
 		#endif
 	}
 
@@ -126,27 +121,18 @@ void slmx4::CloseRadar()
 
 void slmx4::updateNumberOfSamplers()
 {
-	char buffer[1024] = {0};
+	char buffer[BUFFER_SIZE];
 
-	serial.flushReceiver();
 	serial.writeString("VarGetValue_ByName(SamplersPerFrame)");
 
-	serial.readBytes(buffer, 1024, TIMEOUT_MS, SLEEP_US);
+	usleep(10);
+
+	serial.readString(buffer, '0', BUFFER_SIZE, TIMEOUT_MS);
 
 	//printf("%s\n", buffer);
 
-	char* _errstr;
-	char* token;
-	token = strtok(buffer, "<"); //Find number within ACKs...
-	if(token)
-	{
-		if(!strtol(token, &_errstr, 10))
-			token = strtok(NULL, ">"); // if any.
-		
-		numSamplers = (int)strtol(token, &_errstr, 10);
-	}
-	
-
+	char* token = strtok(buffer, "<");
+	numSamplers = atoi(token);
 
 #ifdef DEBUG
 	char text[32];
@@ -173,56 +159,38 @@ int slmx4::Iterations()
 	return(iterations);
 }
 
-void slmx4::TryUpdateChip(int cmd, void* val)
+void slmx4::TryUpdateChip(int cmd,void* test)
 {
-	char _valstr[1024] = {0};
-	char _cmd[1024] = {0};
 
 	switch(cmd)
 	{
 	case rx_wait:
-		sprintf(_valstr, "%i)", *(unsigned char*)val);
-		strcpy(_cmd, "VarSetValue_ByName(rx_wait,");
-		strcat(_cmd, _valstr);
-		serial.writeString(_cmd);
+		serial.writeString("VarSetValue_ByName(rx_wait,0)");
 		break;
-
 	case frame_start:
-		sprintf(_valstr, "%.1f)", *(float*)val);
-		strcpy(_cmd, "VarSetValue_ByName(frame_start,");
-		strcat(_cmd, _valstr);
-		serial.writeString(_cmd);
+		serial.writeString("VarSetValue_ByName(frame_start,0.2)");
 		break;
 	case frame_end:
-		sprintf(_valstr, "%.1f)", *(float*)val);
-		strcpy(_cmd, "VarSetValue_ByName(frame_end,");
-		strcat(_cmd, _valstr);
-		serial.writeString(_cmd);
+		serial.writeString("VarSetValue_ByName(frame_end,4)");
 		break;
 	case ddc_en:
-		sprintf(_valstr, "%i)", *(unsigned char*)val);
-		strcpy(_cmd, "VarSetValue_ByName(ddc_en,");
-		strcat(_cmd, _valstr);
-		serial.writeString(_cmd);
+		serial.writeString("VarSetValue_ByName(ddc_en,0)");
 		break;
 	case pps:
-		sprintf(_valstr, "%i)", *(int*)val);
-		strcpy(_cmd, "VarSetValue_ByName(PPS,");
-		strcat(_cmd, _valstr);
-		serial.writeString(_cmd);
+		serial.writeString("VarSetValue_ByName(PPS,30)");
 		break;
 	}
 
 	if(!check_ACK()){
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'TryUpdateChip'\n");
-		sendosc(string_, (void*)"SUCCESS: ACK from 'TryUpdateChip'", host_addr);
+		sendosc(string_, (void*)"SUCCESS: ACK from 'TryUpdateChip'");
 		#endif
 	}
  	else{ 
 		#ifdef DEBUG
 		printf("ERROR: Reading ACK in 'TryUpdateChip'\n");
-		sendosc(string_, (void*)"ERROR: Reading ACK in 'TryUpdateChip'\n", host_addr);
+		sendosc(string_, (void*)"ERROR: Reading ACK in 'TryUpdateChip'\n");
 		#endif
 	}
 
@@ -242,14 +210,14 @@ void slmx4::init_serial()
     if (errorOpening != 1)
     {
     	printf ("ERROR connection to serial port: %i\n", errorOpening);
-    	sendosc(string_, (void*)"ERROR connection to serial port", host_addr);
+    	sendosc(string_, (void*)"ERROR connection to serial port");
     }
 
     else
     {
 		#ifdef DEBUG
     	printf ("Successful connection to %s\n",SERIAL_PORT);
-    	sendosc(string_, (void*)"Successful connection to serial port", host_addr);
+    	sendosc(string_, (void*)"Successful connection to serial port");
 		#endif
     	serial.setDTR();
     	serial.setRTS();
@@ -292,14 +260,14 @@ int slmx4::GetFrameRaw(_Float32* frame)
 		return(EXIT_SUCCESS);
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'getFrameRaw'\n");
-		sendosc(string_, (void*)"SUCCESS: ACK from 'getFrameRaw'", host_addr);
+		sendosc(string_, (void*)"SUCCESS: ACK from 'getFrameRaw'");
 		#endif
 	}
  	else{ 
 		return(EXIT_FAILURE);
 		#ifdef DEBUG
 		printf("ERROR: Reading ACK in 'getFrameRaw'\n");
-		sendosc(string_, (void*)"ERROR: Reading ACK in 'getFrameRaw'\n", host_addr);
+		sendosc(string_, (void*)"ERROR: Reading ACK in 'getFrameRaw'\n");
 		#endif
 	}
 }
@@ -338,14 +306,14 @@ int slmx4::GetFrameNormalized(_Float32* frame)
 		return(EXIT_SUCCESS);
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'getframenormalized'\n");
-		sendosc(string_, (void*)"SUCCESS: ACK from 'getframenormalized'", host_addr);
+		sendosc(string_, (void*)"SUCCESS: ACK from 'getframenormalized'");
 		#endif
 	}
  	else{ 
 		return(EXIT_FAILURE);
 		#ifdef DEBUG
 		printf("ERROR: Reading ACK in 'getframenormalized'\n");
-		sendosc(string_, (void*)"ERROR: Reading ACK in 'getframenormalized'\n", host_addr);
+		sendosc(string_, (void*)"ERROR: Reading ACK in 'getframenormalized'\n");
 		#endif
 	}
 

@@ -17,7 +17,7 @@
 
 #define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
 #define TIMEOUT_MS 100
-#define SLEEP_US 10
+
 class slmx4
 {
 	serialib serial;
@@ -29,8 +29,6 @@ class slmx4
 
 	int check_ACK();
 
-	char host_addr[32];
-
 public:
 	int status;
 	int numSamplers;
@@ -39,14 +37,14 @@ public:
 	slmx4();
 	enum cmds{rx_wait,frame_start,frame_end,ddc_en, pps};
 
-	int Begin();
+	void Begin();
 	void End();
-	void setHost(const char* host);
 	int  GetFrameNormalized(_Float32* frame);
 	int  GetFrameRaw(_Float32* frame);
 	void updateNumberOfSamplers();
 	int  Iterations();
 	void TryUpdateChip(int, void*);
 };
+
 
 #endif
