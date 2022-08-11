@@ -32,6 +32,8 @@ int slmx4::Begin()
 	if(init_serial() == EXIT_FAILURE){
 		return(EXIT_FAILURE);
 	}
+
+	init_device();
 	OpenRadar();
 
 	while(!isOpen)
@@ -71,7 +73,7 @@ int slmx4::check_ACK()
 
 	ack_[b+1] = 0; // Terminer avec Null
 
-	printf("ACK says : %s\nbytes read : %i", ack_, b);
+	printf("ACK says : %s\nbytes read : %i\n\n", ack_, b);
 
 	if(!strcmp(ack_, "<ACK>")){ 
 		return EXIT_SUCCESS; 
