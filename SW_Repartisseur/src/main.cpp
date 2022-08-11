@@ -270,6 +270,10 @@ int main()
 			else
 				pgm_state = standby; //debug
 
+
+			for(int i = 0; i < 32; ++i)
+				cmd_buf[i] = 0;
+
 			break;
 
 			
