@@ -592,7 +592,8 @@ int serialib::readBytes (void *buffer,unsigned int maxNbBytes,unsigned int timeO
             // Increase the number of read bytes
             NbByteRead+=Ret;
             // Success : bytes has been read
-            return NbByteRead;
+            if (NbByteRead == 5)
+                return NbByteRead;
             
         }
         
