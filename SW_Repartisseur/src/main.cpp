@@ -126,7 +126,7 @@ int main()
 		case starting:
 			if(sensor.Begin() == EXIT_FAILURE)
 			{
-				pgm_state = stopping;
+				pgm_state = standby;
 				break;	//Stop if Begin() times out
 			}
 
@@ -165,9 +165,9 @@ int main()
 					fprintf(fichier,"%f,",sensor_data[i]);
 
 				fprintf(fichier,"%f",sensor_data[sensor.numSamplers-1]);
-        */
+        		*/
 
-				float parse = (50*resp_data->resp_buffer[0]); //TODO: Move declaration
+				float parse = (5000*resp_data->resp_buffer[0]); //TODO: Move declaration
  				int parsed_send = (int)parse;
 				sendosc(int_, &parsed_send,host_addr);
 
