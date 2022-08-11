@@ -34,6 +34,7 @@ int slmx4::Begin()
 	}
 
 	init_device();
+	serial.flushReceiver();
 	OpenRadar();
 
 	while(!isOpen)
