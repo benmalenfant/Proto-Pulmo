@@ -71,7 +71,7 @@ int slmx4::check_ACK()
 	
 	int b = serial.readBytes(ack_, 31, TIMEOUT_MS);
 
-	ack_[b+1] = 0; // Terminer avec Null
+	ack_[b] = 0; // Terminer avec Null
 
 	printf("ACK says : %s\nbytes read : %i\n\n", ack_, b);
 
