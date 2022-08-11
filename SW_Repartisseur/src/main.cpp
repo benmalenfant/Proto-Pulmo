@@ -21,6 +21,7 @@
 // Frame capture macros
 #define BREATH_SIZE 300
 #define PERIOD 50
+#define MAX_TIMEOUTS 10
 
 // Sensor register macros
 #define RX_WAIT 1
@@ -87,6 +88,7 @@ int main()
 
 	/* Timer for easy timeout implementation */
 	timeOut timer;
+	unsigned char timeout_cnt = MAX_TIMEOUTS;
 
 	/* Init state */
 	states pgm_state = standby;
@@ -124,6 +126,10 @@ int main()
 
 		/* Starting: Go through init sequences and send default values to sensor*/
 		case starting:
+
+			while(access(SERIAL_PORT, F_OK));	//Blocking
+
+
 			if(sensor.Begin() == EXIT_FAILURE)
 			{
 				pgm_state = standby;
@@ -194,8 +200,13 @@ int main()
 
 				//Timer has exceeded period before looping back
 				if(timer.elapsedTime_ms() > PERIOD)
+				{
 					fprintf(stderr, "CAUTION : CANNOT RESPECT DEFINED PERIOD || Elapsed : %ims, Period : %ims\r\n",
 							(int)timer.elapsedTime_ms(), PERIOD);
+					if(!--timeout_cnt)
+						pgm_state = starting;
+				}
+					
 			}
 			break;
 
