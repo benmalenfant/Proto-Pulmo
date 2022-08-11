@@ -65,11 +65,13 @@ void slmx4::init_device()
 
 int slmx4::check_ACK()
 {
-	char ack_[ACK_SIZE];
+	char ack_[32];
 	
-	serial.readBytes(ack_, ACK_SIZE-1, TIMEOUT_MS);
+	int b = serial.readBytes(ack_, 31, TIMEOUT_MS);
 
-	ack_[5] = 0;
+	ack_[b+1] = 0; // Terminer avec Null
+
+	printf("ACK says : %s\n", ack_);
 
 	if(!strcmp(ack_, "<ACK>")){ 
 		return EXIT_SUCCESS; 
