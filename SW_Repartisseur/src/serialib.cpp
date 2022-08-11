@@ -192,9 +192,6 @@ char serialib::openDevice(const char *Device, const unsigned int Bauds,
     options.c_cc[VTIME]=0;
     // At least on character before satisfy reading
     options.c_cc[VMIN]=0;
-
-    options.
-
     // Activate the settings
     tcsetattr(fd, TCSANOW, &options);
     // Success
