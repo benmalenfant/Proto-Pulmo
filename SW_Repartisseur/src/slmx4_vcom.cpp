@@ -71,7 +71,7 @@ int slmx4::check_ACK()
 
 	ack_[b+1] = 0; // Terminer avec Null
 
-	printf("ACK says : %s\n", ack_);
+	printf("ACK says : %s\nbytes read : %i", ack_, b);
 
 	if(!strcmp(ack_, "<ACK>")){ 
 		return EXIT_SUCCESS; 
