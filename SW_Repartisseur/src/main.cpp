@@ -277,15 +277,15 @@ int main()
 		/* Stopping: Shutdown the sensor and close the program */
 		case stopping:
 			sensor.End();
-			thread_running = 0;
-			pthread_join(listen_thread, NULL);
-			argsDest(args);
-			return 0;
+			pgm_state = standby;
 
 		default:
 			break;
 		}
 	}
+	thread_running = 0;
+	pthread_join(listen_thread, NULL);
+	argsDest(args);
 	return 0;
 }
 /**************************************************************************************/

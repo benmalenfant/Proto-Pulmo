@@ -103,6 +103,7 @@ void slmx4::OpenRadar()
 
 void slmx4::CloseRadar()
 {
+	serial.flushReceiver();
 	serial.writeString("Close()");
 
 	if(!check_ACK()){
