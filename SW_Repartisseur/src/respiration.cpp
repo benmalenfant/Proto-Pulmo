@@ -133,9 +133,9 @@ int respiration_update(float *sensor_array, int sensor_array_size, respiration_d
     }
 
     float filt_sumMotion = updateFilter(sumMotion,respiration_data->sumMotion_filter);
-    int motion = filt_sumMotion > MOTION_TRESHOLD;
+    int motion = filt_sumMotion > coeff_mouv;
 
-    int presence = filt_sumMotion > PRESENCE_TRESHOLD;
+    int presence = filt_sumMotion > coeff_pres;
 
     respiration_data->resp_buffer[0] = -1 * breath_filt * ((float)motion -1) * presence;
 
