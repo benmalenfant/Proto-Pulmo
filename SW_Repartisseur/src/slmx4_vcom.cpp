@@ -34,6 +34,8 @@ int slmx4::Begin()
 	}
 
 	init_device();
+	serial.setDTR();
+    serial.setRTS();
 	serial.flushReceiver();
 	OpenRadar();
 
