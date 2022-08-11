@@ -67,9 +67,9 @@ void slmx4::init_device()
 
 int slmx4::check_ACK()
 {
-	char ack_[32];
+	char ack_[128];
 	
-	int b = serial.readBytes(ack_, 31, TIMEOUT_MS);
+	int b = serial.readBytes(ack_, 128, TIMEOUT_MS);
 
 	ack_[b] = 0; // Terminer avec Null
 
