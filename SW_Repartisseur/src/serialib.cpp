@@ -577,10 +577,12 @@ int serialib::readBytes (void *buffer,unsigned int maxNbBytes,unsigned int timeO
     // While Timeout is not reached
     while (timer.elapsedTime_ms()<timeOut_ms || timeOut_ms==0)
     {
+        // Wait for all values to come in
+        usleep (sleepDuration_us);
         // Compute the position of the current byte
         unsigned char* Ptr=(unsigned char*)buffer+NbByteRead;
         // Try to read a byte on the device
-        int Ret=read(fd,(void*)Ptr,maxNbBytes-NbByteRead);
+        int Ret=read(fd,(void*)Ptr,maxNbBytes);
         // Error while reading
         if (Ret==-1) return -2;
 
@@ -590,11 +592,10 @@ int serialib::readBytes (void *buffer,unsigned int maxNbBytes,unsigned int timeO
             // Increase the number of read bytes
             NbByteRead+=Ret;
             // Success : bytes has been read
-            if (NbByteRead>=maxNbBytes)
-                return NbByteRead;
+            return NbByteRead;
+            
         }
-        // Suspend the loop to avoid charging the CPU
-        usleep (sleepDuration_us);
+        
     }
     // Timeout reached, return the number of bytes read
     return NbByteRead;
