@@ -14,6 +14,8 @@
 #define BUFFER_SIZE 32
 #define ACK_SIZE 6
 
+#define DEBUG
+
 
 slmx4::slmx4()
 {
@@ -30,6 +32,11 @@ int slmx4::Begin()
 	if(init_serial() == EXIT_FAILURE){
 		return(EXIT_FAILURE);
 	}
+
+	init_device();
+	serial.setDTR();
+    serial.setRTS();
+	serial.flushReceiver();
 	OpenRadar();
 
 	while(!isOpen)
@@ -63,11 +70,19 @@ void slmx4::init_device()
 
 int slmx4::check_ACK()
 {
-	char ack_[ACK_SIZE];
+	char ack_[128];
 	
-	serial.readBytes(ack_, ACK_SIZE-1, TIMEOUT_MS);
+	int b = serial.readBytes(ack_, 128, TIMEOUT_MS);
 
-	ack_[5] = 0;
+	if(b < 0)
+	{
+		serial.closeDevice();
+		init_serial();
+	}
+
+	ack_[b] = 0; // Terminer avec Null
+
+	printf("ACK says : %s\nbytes read : %i\n\n", ack_, b);
 
 	if(!strcmp(ack_, "<ACK>")){ 
 		return EXIT_SUCCESS; 
@@ -103,6 +118,7 @@ void slmx4::OpenRadar()
 
 void slmx4::CloseRadar()
 {
+	serial.flushReceiver();
 	serial.writeString("Close()");
 
 	if(!check_ACK()){
@@ -172,7 +188,7 @@ int slmx4::Iterations()
 	return(iterations);
 }
 
-void slmx4::TryUpdateChip(int cmd,void* test)
+int slmx4::TryUpdateChip(int cmd,void* test)
 {
 
 	switch(cmd)
@@ -205,9 +221,11 @@ void slmx4::TryUpdateChip(int cmd,void* test)
 		printf("ERROR: Reading ACK in 'TryUpdateChip'\n");
 		sendosc(string_, (void*)"ERROR: Reading ACK in 'TryUpdateChip'\n", host_ip);
 		#endif
+		return EXIT_FAILURE;
 	}
 
     updateNumberOfSamplers();
+	return EXIT_SUCCESS;
 
 }
 
@@ -277,7 +295,7 @@ int slmx4::GetFrameRaw(_Float32* frame)
 		return(EXIT_SUCCESS);
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'getFrameRaw'\n");
-		sendosc(string_, (void*)"SUCCESS: ACK from 'getFrameRaw'"), host_ip;
+		sendosc(string_, (void*)"SUCCESS: ACK from 'getFrameRaw'", host_ip);
 		#endif
 	}
  	else{ 
@@ -346,4 +364,8 @@ void slmx4::End()
 {
 	CloseRadar();
 }
+
+void slmx4::flushserialbuff() {serial.flushReceiver();}
+
+void slmx4::closeSerial() {serial.closeDevice();}
 

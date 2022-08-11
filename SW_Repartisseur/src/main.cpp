@@ -21,7 +21,7 @@
 // Frame capture macros
 #define BREATH_SIZE 300
 #define PERIOD 50
-#define MAX_TIMEOUTS 10
+#define MAX_TIMEOUTS 3
 
 // Sensor register macros
 #define RX_WAIT 1
@@ -60,7 +60,7 @@ enum states{stopped, running, parsing, starting, stopping, standby};
 
 // Local functions
 void *osc_listener(void* vargp);
-void UpdateSensorReg(slmx4* sensor, int reg, float val);
+int UpdateSensorReg(slmx4* sensor, int reg, float val);
 
 
 /**************************************************************************************/
@@ -137,7 +137,14 @@ int main()
 			}
 
 			sensor.Iterations();//Default values
-			UpdateSensorReg(&sensor, RX_WAIT, 0);
+
+			//If communication is bad stahp
+			if(UpdateSensorReg(&sensor, RX_WAIT, 0) == EXIT_FAILURE)
+			{
+				pgm_state = standby;
+				break;	//Stop if Begin() times out
+			}
+			
 			UpdateSensorReg(&sensor, FRAME_START, 0.2);
 			UpdateSensorReg(&sensor, FRAME_END, 4);
 			UpdateSensorReg(&sensor, DDC_EN, 1);
@@ -204,7 +211,12 @@ int main()
 					fprintf(stderr, "CAUTION : CANNOT RESPECT DEFINED PERIOD || Elapsed : %ims, Period : %ims\r\n",
 							(int)timer.elapsedTime_ms(), PERIOD);
 					if(!--timeout_cnt)
+					{
 						pgm_state = starting;
+						timeout_cnt = MAX_TIMEOUTS;
+						sensor.flushserialbuff();
+					}
+						
 				}
 					
 			}
@@ -212,11 +224,6 @@ int main()
 
 		/* Parsing: Respond to command buffer input accordingly*/
 		case parsing:
-
-		//	if(!sensor.isOpen)
-		//	{
-		//		sensor.Begin();
-		//	}
 
 			char *_cmd, *_valstr;
 			_val = 0;
@@ -261,14 +268,22 @@ int main()
 			}
 
 			//Start command
-			if(!strcmp(_cmd, "start"))
+			if(!strcmp(_cmd, "reset"))
+			{
+				sensor.closeSerial();
 				pgm_state = starting;
+			}
+				
 			
 			//Shutdown command (for testing)
 			if(!strcmp(_cmd, "stop"))
 				pgm_state = stopping;
 			else
 				pgm_state = standby; //debug
+
+
+			for(int i = 0; i < 32; ++i)
+				cmd_buf[i] = 0;
 
 			break;
 
@@ -277,15 +292,15 @@ int main()
 		/* Stopping: Shutdown the sensor and close the program */
 		case stopping:
 			sensor.End();
-			thread_running = 0;
-			pthread_join(listen_thread, NULL);
-			argsDest(args);
-			return 0;
+			pgm_state = standby;
 
 		default:
 			break;
 		}
 	}
+	thread_running = 0;
+	pthread_join(listen_thread, NULL);
+	argsDest(args);
 	return 0;
 }
 /**************************************************************************************/
@@ -296,29 +311,29 @@ int main()
  *	- reg: 		Register to be updated on sensor (see macros)
  *	- val: 		Value sent to register
  */
-void UpdateSensorReg(slmx4* sensor, int reg, float val)
+int UpdateSensorReg(slmx4* sensor, int reg, float val)
 {
 	switch (reg)
 	{
 	case RX_WAIT:
 		static unsigned char rx_wait_arg = val;
-		sensor->TryUpdateChip(slmx4::rx_wait, &rx_wait_arg);
+		return sensor->TryUpdateChip(slmx4::rx_wait, &rx_wait_arg);
 		break;
 	case FRAME_START:
 		static float frame_start_arg = val;
-		sensor->TryUpdateChip(slmx4::frame_start, &frame_start_arg);
+		return sensor->TryUpdateChip(slmx4::frame_start, &frame_start_arg);
 		break;
 	case FRAME_END:
 		static float frame_end_arg = val;
-		sensor->TryUpdateChip(slmx4::frame_end, &frame_end_arg);
+		return sensor->TryUpdateChip(slmx4::frame_end, &frame_end_arg);
 		break;
 	case DDC_EN:
 		static unsigned char ddc_en_arg = val;
-		sensor->TryUpdateChip(slmx4::ddc_en, &ddc_en_arg);
+		return sensor->TryUpdateChip(slmx4::ddc_en, &ddc_en_arg);
 		break;
 	case PPS:
 		static unsigned int PPS_arg = val;
-		sensor->TryUpdateChip(slmx4::pps, &PPS_arg);
+		return sensor->TryUpdateChip(slmx4::pps, &PPS_arg);
 		break;
 	}
 }

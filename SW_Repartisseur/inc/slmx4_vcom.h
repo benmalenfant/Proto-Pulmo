@@ -46,7 +46,10 @@ public:
 	int  GetFrameRaw(_Float32* frame);
 	void updateNumberOfSamplers();
 	int  Iterations();
-	void TryUpdateChip(int, void*);
+	int TryUpdateChip(int, void*);
+
+	void flushserialbuff();
+	void closeSerial();
 };
 
 
