@@ -280,7 +280,7 @@ int slmx4::GetFrameRaw(_Float32* frame)
 		return(EXIT_SUCCESS);
 		#ifdef DEBUG
  		printf("SUCCESS: ACK from 'getFrameRaw'\n");
-		sendosc(string_, (void*)"SUCCESS: ACK from 'getFrameRaw'"), host_ip;
+		sendosc(string_, (void*)"SUCCESS: ACK from 'getFrameRaw'", host_ip);
 		#endif
 	}
  	else{ 
