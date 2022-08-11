@@ -16,7 +16,7 @@
 //#define DEBUG
 
 #define SERIAL_PORT "/dev/serial/by-id/usb-NXP_SEMICONDUCTORS_MCU_VIRTUAL_COM_DEMO-if00"
-#define TIMEOUT_MS 10
+#define TIMEOUT_MS 100
 
 class slmx4
 {
