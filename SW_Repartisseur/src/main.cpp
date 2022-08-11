@@ -21,7 +21,7 @@
 // Frame capture macros
 #define BREATH_SIZE 300
 #define PERIOD 50
-#define MAX_TIMEOUTS 10
+#define MAX_TIMEOUTS 3
 
 // Sensor register macros
 #define RX_WAIT 1
@@ -204,7 +204,12 @@ int main()
 					fprintf(stderr, "CAUTION : CANNOT RESPECT DEFINED PERIOD || Elapsed : %ims, Period : %ims\r\n",
 							(int)timer.elapsedTime_ms(), PERIOD);
 					if(!--timeout_cnt)
+					{
 						pgm_state = starting;
+						timeout_cnt = MAX_TIMEOUTS;
+						sensor.flushserialbuff();
+					}
+						
 				}
 					
 			}

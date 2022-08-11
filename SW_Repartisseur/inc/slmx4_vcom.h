@@ -47,6 +47,8 @@ public:
 	void updateNumberOfSamplers();
 	int  Iterations();
 	void TryUpdateChip(int, void*);
+
+	void flushserialbuff();
 };
 
 

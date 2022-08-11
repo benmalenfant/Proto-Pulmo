@@ -352,3 +352,5 @@ void slmx4::End()
 	CloseRadar();
 }
 
+void slmx4::flushserialbuff() {serial.flushReceiver();}
+
