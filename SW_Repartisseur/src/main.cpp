@@ -225,11 +225,6 @@ int main()
 		/* Parsing: Respond to command buffer input accordingly*/
 		case parsing:
 
-		//	if(!sensor.isOpen)
-		//	{
-		//		sensor.Begin();
-		//	}
-
 			char *_cmd, *_valstr;
 			_val = 0;
 
