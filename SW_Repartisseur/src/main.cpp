@@ -89,7 +89,7 @@ int main()
 	timeOut timer;
 
 	/* Init state */
-	states pgm_state = starting;
+	states pgm_state = standby;
 	
 	while(1)
 	{
@@ -100,15 +100,16 @@ int main()
 			if(go__)
 			{
 				go__ = 0;
-				pgm_state = starting;
+				pgm_state = standby;
 			}
 			//Catch flags (set in listener thread)
 			if(host__)
 			{
 				host__ = 0;
-				//sensor.setHost(host_addr);
+				sensor.setHost(host_addr);
 				fprintf(stdout, "%s\n", host_addr);	//This can now be used to communicate with MAX
 				fflush(stdout);
+				pgm_state = starting;
 			}
 			if(cmd__)
 			{
@@ -125,7 +126,7 @@ int main()
 		case starting:
 			if(sensor.Begin() == EXIT_FAILURE)
 			{
-				pgm_state = stopping;
+				pgm_state = standby;
 				break;	//Stop if Begin() times out
 			}
 
@@ -157,12 +158,19 @@ int main()
 					break;
 				}
 
+
 				/*
+
 				for(int i = 0; i < sensor.numSamplers-1; i++)
 					fprintf(fichier,"%f,",sensor_data[i]);
 
 				fprintf(fichier,"%f",sensor_data[sensor.numSamplers-1]);
-				*/
+        		*/
+
+				float parse = (5000*resp_data->resp_buffer[0]); //TODO: Move declaration
+ 				int parsed_send = (int)parse;
+				sendosc(int_, &parsed_send,host_addr);
+
 
 				
 				for(int i = 0; i < resp_data->resp_buffer_size-1; i++)
@@ -194,10 +202,10 @@ int main()
 		/* Parsing: Respond to command buffer input accordingly*/
 		case parsing:
 
-			if(!sensor.isOpen)
-			{
-				sensor.Begin();
-			}
+		//	if(!sensor.isOpen)
+		//	{
+		//		sensor.Begin();
+		//	}
 
 			char *_cmd, *_valstr;
 			_val = 0;
@@ -241,6 +249,10 @@ int main()
 				fflush(stdout);
 			}
 
+			//Start command
+			if(!strcmp(_cmd, "start"))
+				pgm_state = starting;
+			
 			//Shutdown command (for testing)
 			if(!strcmp(_cmd, "stop"))
 				pgm_state = stopping;
