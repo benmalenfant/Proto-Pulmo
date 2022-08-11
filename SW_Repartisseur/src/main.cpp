@@ -60,7 +60,7 @@ enum states{stopped, running, parsing, starting, stopping, standby};
 
 // Local functions
 void *osc_listener(void* vargp);
-void UpdateSensorReg(slmx4* sensor, int reg, float val);
+int UpdateSensorReg(slmx4* sensor, int reg, float val);
 
 
 /**************************************************************************************/
@@ -137,7 +137,14 @@ int main()
 			}
 
 			sensor.Iterations();//Default values
-			UpdateSensorReg(&sensor, RX_WAIT, 0);
+
+			//If communication is bad stahp
+			if(UpdateSensorReg(&sensor, RX_WAIT, 0) == EXIT_FAILURE)
+			{
+				pgm_state = standby;
+				break;	//Stop if Begin() times out
+			}
+			
 			UpdateSensorReg(&sensor, FRAME_START, 0.2);
 			UpdateSensorReg(&sensor, FRAME_END, 4);
 			UpdateSensorReg(&sensor, DDC_EN, 1);
@@ -266,8 +273,12 @@ int main()
 			}
 
 			//Start command
-			if(!strcmp(_cmd, "start"))
+			if(!strcmp(_cmd, "reset"))
+			{
+				sensor.closeSerial();
 				pgm_state = starting;
+			}
+				
 			
 			//Shutdown command (for testing)
 			if(!strcmp(_cmd, "stop"))
@@ -305,29 +316,29 @@ int main()
  *	- reg: 		Register to be updated on sensor (see macros)
  *	- val: 		Value sent to register
  */
-void UpdateSensorReg(slmx4* sensor, int reg, float val)
+int UpdateSensorReg(slmx4* sensor, int reg, float val)
 {
 	switch (reg)
 	{
 	case RX_WAIT:
 		static unsigned char rx_wait_arg = val;
-		sensor->TryUpdateChip(slmx4::rx_wait, &rx_wait_arg);
+		return sensor->TryUpdateChip(slmx4::rx_wait, &rx_wait_arg);
 		break;
 	case FRAME_START:
 		static float frame_start_arg = val;
-		sensor->TryUpdateChip(slmx4::frame_start, &frame_start_arg);
+		return sensor->TryUpdateChip(slmx4::frame_start, &frame_start_arg);
 		break;
 	case FRAME_END:
 		static float frame_end_arg = val;
-		sensor->TryUpdateChip(slmx4::frame_end, &frame_end_arg);
+		return sensor->TryUpdateChip(slmx4::frame_end, &frame_end_arg);
 		break;
 	case DDC_EN:
 		static unsigned char ddc_en_arg = val;
-		sensor->TryUpdateChip(slmx4::ddc_en, &ddc_en_arg);
+		return sensor->TryUpdateChip(slmx4::ddc_en, &ddc_en_arg);
 		break;
 	case PPS:
 		static unsigned int PPS_arg = val;
-		sensor->TryUpdateChip(slmx4::pps, &PPS_arg);
+		return sensor->TryUpdateChip(slmx4::pps, &PPS_arg);
 		break;
 	}
 }

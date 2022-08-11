@@ -188,7 +188,7 @@ int slmx4::Iterations()
 	return(iterations);
 }
 
-void slmx4::TryUpdateChip(int cmd,void* test)
+int slmx4::TryUpdateChip(int cmd,void* test)
 {
 
 	switch(cmd)
@@ -221,9 +221,11 @@ void slmx4::TryUpdateChip(int cmd,void* test)
 		printf("ERROR: Reading ACK in 'TryUpdateChip'\n");
 		sendosc(string_, (void*)"ERROR: Reading ACK in 'TryUpdateChip'\n", host_ip);
 		#endif
+		return EXIT_FAILURE;
 	}
 
     updateNumberOfSamplers();
+	return EXIT_SUCCESS;
 
 }
 
@@ -364,4 +366,6 @@ void slmx4::End()
 }
 
 void slmx4::flushserialbuff() {serial.flushReceiver();}
+
+void slmx4::closeSerial() {serial.closeDevice();}
 
