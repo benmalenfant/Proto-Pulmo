@@ -28,15 +28,7 @@ This is a licence-free software, it can be used by anyone who try to build a bet
 */
 serialib::serialib()
 {
-#if defined (_WIN32) || defined( _WIN64)
-    // Set default value for RTS and DTR (Windows only)
-    currentStateRTS=true;
-    currentStateDTR=true;
-    hSerial = INVALID_HANDLE_VALUE;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     fd = -1;
-#endif
 }
 
 
@@ -129,99 +121,7 @@ char serialib::openDevice(const char *Device, const unsigned int Bauds,
                           SerialDataBits Databits,
                           SerialParity Parity,
                           SerialStopBits Stopbits) {
-#if defined (_WIN32) || defined( _WIN64)
-    // Open serial port
-    hSerial = CreateFileA(Device,GENERIC_READ | GENERIC_WRITE,0,0,OPEN_EXISTING,/*FILE_ATTRIBUTE_NORMAL*/0,0);
-    if(hSerial==INVALID_HANDLE_VALUE) {
-        if(GetLastError()==ERROR_FILE_NOT_FOUND)
-            return -1; // Device not found
 
-        // Error while opening the device
-        return -2;
-    }
-
-    // Set parameters
-
-    // Structure for the port parameters
-    DCB dcbSerialParams;
-    dcbSerialParams.DCBlength=sizeof(dcbSerialParams);
-
-    // Get the port parameters
-    if (!GetCommState(hSerial, &dcbSerialParams)) return -3;
-
-    // Set the speed (Bauds)
-    switch (Bauds)
-    {
-    case 110  :     dcbSerialParams.BaudRate=CBR_110; break;
-    case 300  :     dcbSerialParams.BaudRate=CBR_300; break;
-    case 600  :     dcbSerialParams.BaudRate=CBR_600; break;
-    case 1200 :     dcbSerialParams.BaudRate=CBR_1200; break;
-    case 2400 :     dcbSerialParams.BaudRate=CBR_2400; break;
-    case 4800 :     dcbSerialParams.BaudRate=CBR_4800; break;
-    case 9600 :     dcbSerialParams.BaudRate=CBR_9600; break;
-    case 14400 :    dcbSerialParams.BaudRate=CBR_14400; break;
-    case 19200 :    dcbSerialParams.BaudRate=CBR_19200; break;
-    case 38400 :    dcbSerialParams.BaudRate=CBR_38400; break;
-    case 56000 :    dcbSerialParams.BaudRate=CBR_56000; break;
-    case 57600 :    dcbSerialParams.BaudRate=CBR_57600; break;
-    case 115200 :   dcbSerialParams.BaudRate=CBR_115200; break;
-    case 128000 :   dcbSerialParams.BaudRate=CBR_128000; break;
-    case 256000 :   dcbSerialParams.BaudRate=CBR_256000; break;
-    default : return -4;
-    }
-    //select data size
-    BYTE bytesize = 0;
-    switch(Databits) {
-        case SERIAL_DATABITS_5: bytesize = 5; break;
-        case SERIAL_DATABITS_6: bytesize = 6; break;
-        case SERIAL_DATABITS_7: bytesize = 7; break;
-        case SERIAL_DATABITS_8: bytesize = 8; break;
-        case SERIAL_DATABITS_16: bytesize = 16; break;
-        default: return -7;
-    }
-    BYTE stopBits = 0;
-    switch(Stopbits) {
-        case SERIAL_STOPBITS_1: stopBits = ONESTOPBIT; break;
-        case SERIAL_STOPBITS_1_5: stopBits = ONE5STOPBITS; break;
-        case SERIAL_STOPBITS_2: stopBits = TWOSTOPBITS; break;
-        default: return -8;
-    }
-    BYTE parity = 0;
-    switch(Parity) {
-        case SERIAL_PARITY_NONE: parity = NOPARITY; break;
-        case SERIAL_PARITY_EVEN: parity = EVENPARITY; break;
-        case SERIAL_PARITY_ODD: parity = ODDPARITY; break;
-        case SERIAL_PARITY_MARK: parity = MARKPARITY; break;
-        case SERIAL_PARITY_SPACE: parity = SPACEPARITY; break;
-        default: return -9;
-    }
-    // configure byte size
-    dcbSerialParams.ByteSize = bytesize;
-    // configure stop bits
-    dcbSerialParams.StopBits = stopBits;
-    // configure parity
-    dcbSerialParams.Parity = parity;
-
-    // Write the parameters
-    if(!SetCommState(hSerial, &dcbSerialParams)) return -5;
-
-    // Set TimeOut
-
-    // Set the Timeout parameters
-    timeouts.ReadIntervalTimeout=0;
-    // No TimeOut
-    timeouts.ReadTotalTimeoutConstant=MAXDWORD;
-    timeouts.ReadTotalTimeoutMultiplier=0;
-    timeouts.WriteTotalTimeoutConstant=MAXDWORD;
-    timeouts.WriteTotalTimeoutMultiplier=0;
-
-    // Write the parameters
-    if(!SetCommTimeouts(hSerial, &timeouts)) return -6;
-
-    // Opening successfull
-    return 1;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Structure with the device's options
     struct termios options;
 
@@ -292,22 +192,18 @@ char serialib::openDevice(const char *Device, const unsigned int Bauds,
     options.c_cc[VTIME]=0;
     // At least on character before satisfy reading
     options.c_cc[VMIN]=0;
+
+    options.
+
     // Activate the settings
     tcsetattr(fd, TCSANOW, &options);
     // Success
     return (1);
-#endif
-
 }
 
 bool serialib::isDeviceOpen()
 {
-#if defined (_WIN32) || defined( _WIN64)
-    return hSerial != INVALID_HANDLE_VALUE;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     return fd >= 0;
-#endif
 }
 
 /*!
@@ -315,14 +211,8 @@ bool serialib::isDeviceOpen()
 */
 void serialib::closeDevice()
 {
-#if defined (_WIN32) || defined( _WIN64)
-    CloseHandle(hSerial);
-    hSerial = INVALID_HANDLE_VALUE;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     close (fd);
     fd = -1;
-#endif
 }
 
 
@@ -341,22 +231,11 @@ void serialib::closeDevice()
   */
 char serialib::writeChar(const char Byte)
 {
-#if defined (_WIN32) || defined( _WIN64)
-    // Number of bytes written
-    DWORD dwBytesWritten;
-    // Write the char to the serial device
-    // Return -1 if an error occured
-    if(!WriteFile(hSerial,&Byte,1,&dwBytesWritten,NULL)) return -1;
-    // Write operation successfull
-    return 1;
-#endif
-#if defined (__linux__) || defined(__APPLE__)
     // Write the char
     if (write(fd,&Byte,1)!=1) return -1;
 
     // Write operation successfull
     return 1;
-#endif
 }
 
 
