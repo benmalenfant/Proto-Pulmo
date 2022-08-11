@@ -14,6 +14,8 @@
 #define BUFFER_SIZE 32
 #define ACK_SIZE 6
 
+#define DEBUG
+
 
 slmx4::slmx4()
 {
