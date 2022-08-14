@@ -34,3 +34,7 @@ Verrifiez que le binaire se lance bien et que l'utilisateur est bel et bien ajou
 @reboot sleep 15 && /home/pi/proto-pulmo/sw_repartisseur/bin/sw_repartisseur
 
  remplacez bien sur /home/pi/proto-pulmo/sw_repartisseur/bin/sw_repartisseur par le chemin au binaire compilé
+ 
+ 
+ 
+Ensuite, lorsque le repartisseur est pret, vous devez envoyer vottre adresse IP de MAXmsp au répartisseur, pour ce faire, vous devrez envoyer un message de format @192.168.2.1 via sendUDP. Cela indiquera au répartisseur ou envoyer les données. Le répartisseur envoiera ensuite les données par udp sur le port déterminé
