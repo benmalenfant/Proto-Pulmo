@@ -27,3 +27,10 @@ Le repo est separe en 3 dossiers principaux :
 	 - Code C pour permettre l'interface avec le capteur, la détection de respiration et l'envoi des données vers MaxMSP
 
 ## Usage
+Pour commencer, si vous avez un nouveau repartisseur, vous devrez installer les librairies qui sont nécessaires puis compiler le code (Voir le readme de sw_repartisseur).
+
+Verrifiez que le binaire se lance bien et que l'utilisateur est bel et bien ajouté au groupe dialout. Ensuite, vous devrez ajouter le programme au crontab du système d'exploitation pour que celui-ci se lance automatiquement lors du démarage du système. Pour ce faire, utilisez la commande crontab -e et ajoutez à la fin du fichier la ligne suivante : 
+
+@reboot sleep 15 && /home/pi/proto-pulmo/sw_repartisseur/bin/sw_repartisseur
+
+ remplacez bien sur /home/pi/proto-pulmo/sw_repartisseur/bin/sw_repartisseur par le chemin au binaire compilé
